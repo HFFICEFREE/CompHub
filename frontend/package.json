@@ -5,6 +5,7 @@
     "build": "next build",
     "start": "next start"
   },
+  "type": "module",
   "dependencies": {
     "@headlessui/react": "^1.7.19",
     "@heroicons/react": "^2.1.4",

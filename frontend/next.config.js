@@ -1,8 +1,12 @@
-/** @type {import('next').NextConfig} */
+// Removed TypeScript-specific syntax for JavaScript compatibility
+
 const nextConfig = {
-    images: {
-        domains: ['lh3.googleusercontent.com'],
-    },
+  experimental: {
+    // No unknown properties
+  },
+  images: {
+    domains: ['lh3.googleusercontent.com'],
+},
 };
 
-module.exports = nextConfig;
+export default nextConfig;
