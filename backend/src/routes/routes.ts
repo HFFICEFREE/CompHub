@@ -3,9 +3,40 @@ import { GetPlayersInRoom, GetServerName, IsOwnerOfServer, UserIsInGuild, GetCha
 import { supabase } from '../supabase'
 import { z } from 'zod'
 import { sessionManager } from '../session'
+import path from 'path'
 
 export default function routes(): Router {
     const router = Router()
+
+    router.get('/openapi.json', (req, res) => {
+        const specPath = path.join(__dirname, '..', '..', 'openapi.json')
+        res.sendFile(specPath)
+    })
+
+    router.get('/docs', (_req, res) => {
+        res.setHeader('Content-Type', 'text/html')
+        res.send(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>API Docs</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+      window.onload = () => {
+        window.ui = SwaggerUIBundle({
+          url: '/openapi.json',
+          dom_id: '#swagger-ui'
+        });
+      }
+    </script>
+  </body>
+</html>`)
+    })
 
     router.get('/getPlayersInRoom', async (req, res) => {
         const access_token = req.headers.authorization?.split(' ')[1];

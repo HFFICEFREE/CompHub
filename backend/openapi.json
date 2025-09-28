@@ -1,0 +1,88 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CompHub Backend API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    { "url": "http://localhost:3001" }
+  ],
+  "paths": {
+    "/getPlayersInRoom": {
+      "get": {
+        "summary": "Get players in a specific room of the current realm session",
+        "parameters": [
+          {
+            "name": "roomIndex",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Index of the room (integer in string form)"
+          }
+        ],
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "List of players",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "players": { "type": "array", "items": { "type": "object" } }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid parameters or user not in realm" },
+          "401": { "description": "Invalid or missing access token" }
+        }
+      }
+    },
+    "/getPlayerCounts": {
+      "get": {
+        "summary": "Get online player counts for multiple realm IDs",
+        "parameters": [
+          {
+            "name": "realmIds",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Comma-separated list of realm IDs"
+          }
+        ],
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Array of counts aligned to provided realmIds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "playerCounts": {
+                      "type": "array",
+                      "items": { "type": "number" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid parameters or too many server IDs" },
+          "401": { "description": "Invalid or missing access token" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+} 
