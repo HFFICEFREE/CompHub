@@ -54,7 +54,7 @@ function onRealmUpdate(payload: RealtimePostgresUpdatePayload<RealmRow>) {
     if (payload.new.share_id !== payload.old.share_id) {
         refresh = true
     }
-    if (payload.new.only_owner) {
+    if (payload.new.only_owner !== payload.old.only_owner) {
         refresh = true
     }
     if (refresh) {
