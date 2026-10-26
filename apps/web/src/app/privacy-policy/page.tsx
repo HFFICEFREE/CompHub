@@ -23,10 +23,10 @@ export default function PrivacyPolicy() {
 
                 <h1 className='font-bold text-xl'>Data Sharing and Security</h1>
                 <p>We do not sell, trade, or rent your personal information to others. Your data is securely stored and only accessible by the app for authentication purposes and to display your profile information.</p>
-                <p>However, please note that we rely on Google's OAuth service for authentication, and their handling of your data is subject to Google's Privacy Policy.</p>
+                <p>However, please note that we rely on Google&apos;s OAuth service for authentication, and their handling of your data is subject to Google&apos;s Privacy Policy.</p>
 
                 <h1 className='font-bold text-xl'>Your Choices</h1>
-                <p>You can revoke the app's access to your Google account at any time by going to your Google Account settings and removing the app's permissions.</p>
+                <p>You can revoke the app&apos;s access to your Google account at any time by going to your Google Account settings and removing the app&apos;s permissions.</p>
 
                 <h1 className='font-bold text-xl'>Changes to This Privacy Policy</h1>
                 <p>We reserve the right to update this Privacy Policy as necessary. We encourage you to review this page periodically for any changes. Continued use of the app after updates will constitute your acknowledgment and acceptance of those changes.</p>
