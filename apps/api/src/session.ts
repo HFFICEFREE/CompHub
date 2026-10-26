@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
+import { createHash } from 'crypto'
 import { findPath } from './pathfinding'
 
 export type RealmData = {
@@ -19,6 +20,7 @@ export interface Room {
             above_floor?: string,
             object?: string,
             impassable?: boolean
+            privateAreaId?: string
             teleporter?: {
                 roomIndex: number,
                 x: number,
@@ -292,6 +294,17 @@ export class Session {
 
     public getPlayerRoom(uid: string): number {
         return this.players[uid].room
+    }
+
+    public getPlayerChannelId(uid: string): string | null {
+        const player = this.players[uid]
+        if (!player) return null
+
+        const tile = this.map_data.rooms[player.room]?.tilemap[`${player.x}, ${player.y}`]
+        const channel = tile?.privateAreaId ?? player.proximityId
+        if (!channel) return null
+
+        return createHash('md5').update(`${this.id}-${channel}`).digest('hex').substring(0, 16)
     }
 
     public movePlayer(uid: string, x: number, y: number): string[] {

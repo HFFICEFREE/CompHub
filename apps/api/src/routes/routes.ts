@@ -71,6 +71,32 @@ export default function routes(): Router {
         return res.json({ players })
     })
 
+    router.get('/agoraChannel', async (req, res) => {
+        const access_token = req.headers.authorization?.split(' ')[1];
+
+        if (!access_token) {
+            return res.status(401).json({ message: 'No access token provided' });
+        }
+
+        const { data: user, error } = await supabase.auth.getUser(access_token)
+
+        if (error || !user.user) {
+            return res.status(401).json({ message: 'Invalid access token' })
+        }
+
+        const session = sessionManager.getPlayerSession(user.user.id)
+        if (!session) {
+            return res.status(400).json({ message: 'User not in a realm.' })
+        }
+
+        const channelName = session.getPlayerChannelId(user.user.id)
+        if (!channelName) {
+            return res.status(403).json({ message: 'User is not in a voice channel.' })
+        }
+
+        return res.json({ channelName })
+    })
+
     router.get('/getPlayerCounts', async (req, res) => {
         const access_token = req.headers.authorization?.split(' ')[1];
 
