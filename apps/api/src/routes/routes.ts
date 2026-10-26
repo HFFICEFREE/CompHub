@@ -61,7 +61,13 @@ export default function routes(): Router {
             return res.status(400).json({ message: 'User not in a realm.' })
         }
 
-        const players = session.getPlayersInRoom(params.roomIndex)
+        const players = session.getPlayersInRoom(params.roomIndex).map(({ uid, username, x, y, skin }) => ({
+            uid,
+            username,
+            x,
+            y,
+            skin,
+        }))
         return res.json({ players })
     })
 
