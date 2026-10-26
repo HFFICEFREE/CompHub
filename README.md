@@ -108,6 +108,16 @@ NEXT_PUBLIC_AGORA_APP_ID=
 APP_CERTIFICATE=
 ```
 
+### Configuração do Supabase Realtime
+
+O backend escuta alterações na tabela `realms` para encerrar sessões quando o mapa, o compartilhamento ou a permissão de dono mudam. Para que os eventos de `UPDATE` incluam a linha anterior completa, configure a tabela com `REPLICA IDENTITY FULL` no SQL Editor do Supabase:
+
+```sql
+ALTER TABLE public.realms REPLICA IDENTITY FULL;
+```
+
+Sem essa configuração, o payload de `UPDATE` pode não conter `old` completo e o backend não consegue comparar os campos com segurança.
+
 Por fim, na raiz do projeto execute `pnpm dev` (sobe frontend e backend em paralelo). Para rodar cada um separadamente: `pnpm --filter @comphub/web dev` ou `pnpm --filter @comphub/api dev`.
 
 ### Funcionalidades Principais

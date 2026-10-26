@@ -47,11 +47,18 @@ function kickSessionPlayers(realmId: string, reason: string) {
 
 function onRealmUpdate(payload: RealtimePostgresUpdatePayload<RealmRow>) {
     const id = payload.new.id
+    const old = payload.old
+
+    if (!old) {
+        console.warn(`Realm ${id} updated without previous data. Ensure the realms table has REPLICA IDENTITY FULL.`)
+        return
+    }
+
     let refresh = false
-    if (JSON.stringify(payload.new.map_data) !== JSON.stringify(payload.old.map_data)) {
+    if (JSON.stringify(payload.new.map_data) !== JSON.stringify(old.map_data)) {
         refresh = true
     }
-    if (payload.new.share_id !== payload.old.share_id) {
+    if (payload.new.share_id !== old.share_id) {
         refresh = true
     }
     if (payload.new.only_owner) {
