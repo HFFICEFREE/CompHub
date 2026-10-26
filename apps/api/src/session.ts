@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
+import { findPath } from './pathfinding'
 
 export type RealmData = {
     spawnpoint: {
@@ -138,6 +139,11 @@ export class Session {
     public id: string
     public map_data: RealmData 
 
+    // Tiles impassable por sala — constantes durante a vida da sessão
+    // (quando o dono salva o mapa, a sessão é destruída e recriada pelo
+    // onRealmUpdate, então o cache nunca fica velho)
+    private blockedTilesCache: { [key: number]: Set<string> } = {}
+
     constructor(id: string, mapData: RealmData) {
         this.id = id
         this.map_data = mapData 
@@ -216,6 +222,34 @@ export class Session {
     public getRoomWithChannelId(channelId: string): number | null {
         const index = this.map_data.rooms.findIndex(room => room.channelId === channelId)
         return index !== -1 ? index : null
+    }
+
+    public getBlockedTiles(roomIndex: number): Set<string> {
+        if (!this.blockedTilesCache[roomIndex]) {
+            const blocked = new Set<string>()
+            const room = this.map_data.rooms[roomIndex]
+            for (const [key, tile] of Object.entries(room?.tilemap ?? {})) {
+                if (tile.impassable) {
+                    blocked.add(key)
+                }
+            }
+            this.blockedTilesCache[roomIndex] = blocked
+        }
+        return this.blockedTilesCache[roomIndex]
+    }
+
+    // Valida um movimento reportado pelo cliente com o MESMO algoritmo que o
+    // cliente usa (BFS 4-direcional). O servidor considera só `impassable`
+    // como obstáculo — subconjunto do blocked do cliente (que soma os
+    // colliders de sprites) — então todo caminho legítimo do cliente também
+    // existe aqui, e atalhos impossíveis são recusados.
+    public hasPath(roomIndex: number, startX: number, startY: number, endX: number, endY: number): boolean {
+        if (!this.map_data.rooms[roomIndex]) return false
+        return findPath([startX, startY], [endX, endY], this.getBlockedTiles(roomIndex)) !== null
+    }
+
+    public getTeleporterAt(roomIndex: number, x: number, y: number) {
+        return this.map_data.rooms[roomIndex]?.tilemap[`${x}, ${y}`]?.teleporter
     }
 
     public getPlayerCount() {
