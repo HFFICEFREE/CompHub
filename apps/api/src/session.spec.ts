@@ -26,6 +26,23 @@ describe('Session', () => {
         expect(session.getPlayersInRoom(0)).toHaveLength(1)
     })
 
+    it('rejeita spawnpoint com sala fora do intervalo', () => {
+        const invalidSession = new Session('realm-invalid', {
+            ...makeRealmData(),
+            spawnpoint: { roomIndex: 5, x: 0, y: 0 },
+        })
+
+        expect(invalidSession.addPlayer('socket-1', 'uid-1', 'Alice', defaultSkin)).toBe(false)
+        expect(invalidSession.getPlayerCount()).toBe(0)
+    })
+
+    it('changeRoom ignora sala fora do intervalo', () => {
+        session.addPlayer('socket-1', 'uid-1', 'Alice', defaultSkin)
+
+        expect(session.changeRoom('uid-1', 9, 3, 3)).toEqual([])
+        expect(session.getPlayer('uid-1')).toMatchObject({ room: 0, x: 0, y: 0 })
+    })
+
     it('mantém os demais jogadores no índice quando alguém sai do mesmo tile', () => {
         // Dois jogadores nascem exatamente no mesmo tile (spawnpoint)
         session.addPlayer('socket-1', 'uid-1', 'Alice', defaultSkin)

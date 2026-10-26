@@ -20,6 +20,24 @@ const messageLimiter = new RateLimiter(5, 2_000)
 const skinLimiter = new RateLimiter(3, 2_000)
 const teleportLimiter = new RateLimiter(5, 2_000)
 
+function withErrorBoundary<TArgs extends unknown[]>(
+    eventName: string,
+    handler: (...args: TArgs) => unknown,
+) {
+    return (...args: TArgs): void => {
+        try {
+            const result = handler(...args)
+            if (result instanceof Promise) {
+                result.catch((error) => {
+                    console.error(`Socket handler error (${eventName}):`, error)
+                })
+            }
+        } catch (error) {
+            console.error(`Socket handler error (${eventName}):`, error)
+        }
+    }
+}
+
 function protectConnection(io: Server) {
     io.use(async (socket, next) => {
         const access_token = socket.handshake.headers['authorization']?.split(' ')[1]
@@ -46,10 +64,10 @@ export function sockets(io: Server) {
     protectConnection(io)
 
     // Handle a connection
-    io.on('connection', (socket) => {
+    io.on('connection', withErrorBoundary('connection', (socket) => {
 
         function on<T>(eventName: string, schema: z.ZodType<T>, callback: OnEventCallback<T>) {
-            socket.on(eventName, (data: unknown) => {
+            socket.on(eventName, withErrorBoundary(eventName, (data: unknown) => {
                 const parsed = schema.safeParse(data)
                 if (!parsed.success) return
 
@@ -58,7 +76,7 @@ export function sockets(io: Server) {
                     return
                 }
                 callback({ session, data: parsed.data })
-            })
+            }))
         }
 
         function emit(eventName: string, data: unknown) {
@@ -83,7 +101,7 @@ export function sockets(io: Server) {
             }
         }
 
-        socket.on('joinRealm', async (realmData: z.infer<typeof JoinRealm>) => {
+        socket.on('joinRealm', withErrorBoundary('joinRealm', async (realmData: z.infer<typeof JoinRealm>) => {
             const uid = socket.handshake.query.uid as string
             const rejectJoin = (reason: string) => {
                 socket.emit('failedToJoinRoom', reason)
@@ -132,7 +150,9 @@ export function sockets(io: Server) {
 
                     const user = users.getUser(uid)!
                     const username = formatEmailToName(user.user_metadata.email)
-                    sessionManager.addPlayerToSession(socket.id, realmData.realmId, uid, username, profile.skin)
+                    if (!sessionManager.addPlayerToSession(socket.id, realmData.realmId, uid, username, profile.skin)) {
+                        return rejectJoin('Failed to join the space.')
+                    }
                     const newSession = sessionManager.getPlayerSession(uid)
                     const player = newSession.getPlayer(uid)
 
@@ -162,7 +182,7 @@ export function sockets(io: Server) {
             } finally {
                 joiningInProgress.delete(uid)
             }
-        })
+        }))
 
         // Handle a disconnection
         on('disconnect', Disconnect, ({ session }) => {
@@ -269,5 +289,5 @@ export function sockets(io: Server) {
 
             emit('receiveMessage', { uid, message })
         })
-    })
+    }))
 }
