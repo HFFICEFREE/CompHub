@@ -38,6 +38,18 @@ function withErrorBoundary<TArgs extends unknown[]>(
     }
 }
 
+function getTokenExpirationMs(token: string): number | null {
+    const payload = token.split('.')[1]
+    if (!payload) return null
+
+    try {
+        const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { exp?: unknown }
+        return typeof decoded.exp === 'number' ? decoded.exp * 1000 : null
+    } catch {
+        return null
+    }
+}
+
 function protectConnection(io: Server) {
     io.use(async (socket, next) => {
         const access_token = socket.handshake.headers['authorization']?.split(' ')[1]
@@ -54,6 +66,15 @@ function protectConnection(io: Server) {
                 return next(new Error("Invalid uid."))
             }
             users.addUser(uid, user.user)
+
+            const expiresAt = getTokenExpirationMs(access_token)
+            if (expiresAt !== null) {
+                const timeout = setTimeout(() => {
+                    socket.disconnect(true)
+                }, Math.max(0, expiresAt - Date.now()))
+                socket.once('disconnect', () => clearTimeout(timeout))
+            }
+
             next()
         }
     })
