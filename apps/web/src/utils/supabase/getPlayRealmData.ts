@@ -1,12 +1,9 @@
 'use server'
 import 'server-only'
-import { createClient } from '@supabase/supabase-js'
+import { createUserClient } from './server'
 
 export async function getPlayRealmData(accessToken: string, shareId: string) {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SERVICE_ROLE!,
-    )
+    const supabase = createUserClient(accessToken)
 
     const { data: user, error: userError } = await supabase.auth.getUser(accessToken)
 

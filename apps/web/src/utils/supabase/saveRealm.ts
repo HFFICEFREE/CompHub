@@ -1,7 +1,7 @@
 'use server'
 import 'server-only'
 import { RealmData } from '../pixi/types'
-import { createClient } from '@supabase/supabase-js'
+import { createUserClient } from './server'
 import { RealmDataSchema } from '../pixi/zod'
 import { formatForComparison, removeExtraSpaces } from '../removeExtraSpaces'
 
@@ -42,10 +42,7 @@ export async function saveRealm(access_token: string, realmData: RealmData, id: 
         room.name = removeExtraSpaces(room.name, true)
     }
 
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SERVICE_ROLE!,
-    )
+    const supabase = createUserClient(access_token)
 
     const { data: user, error: userError } = await supabase.auth.getUser(access_token)
     if (!user || !user.user) {
