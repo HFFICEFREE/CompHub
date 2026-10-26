@@ -205,6 +205,23 @@ describe('Session — validação de movimento e teleport', () => {
         // sala inexistente não explode
         expect(session.getTeleporterAt(5, 0, 2)).toBeUndefined()
     })
+
+    it('isWalkable valida sala, coordenadas inteiras e tiles impassable', () => {
+        expect(session.isWalkable(0, 0, 0)).toBe(true)
+        expect(session.isWalkable(0, 2, 0)).toBe(false)
+        expect(session.isWalkable(1, 0, 0)).toBe(true)
+        expect(session.isWalkable(9, 0, 0)).toBe(false)
+        expect(session.isWalkable(0, 0.5, 0)).toBe(false)
+    })
+
+    it('aceita destino multi-tile: o cliente emite o destino final do BFS, nao passo a passo', () => {
+        // Regressao: o handler chegou a exigir adjacencia (distancia == 1) entre
+        // o tile atual e o destino. Como Player.moveToTile emite UM unico
+        // movePlayer com o fim do caminho (5-20 tiles num clique comum), isso
+        // rejeitava movimento legitimo — o jogador andava so no cliente e os
+        // demais o viam parado, com a proximidade dessincronizada.
+        expect(session.hasPath(0, 0, 0, 8, 6)).toBe(true)
+    })
 })
 
 describe('SessionManager', () => {
