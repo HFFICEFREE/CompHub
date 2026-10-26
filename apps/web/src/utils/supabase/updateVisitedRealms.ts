@@ -1,13 +1,10 @@
 'use server'
 import 'server-only'
-import { createClient } from '@supabase/supabase-js'
+import { createUserClient } from './server'
 import revalidate from '../revalidate'
 
 export async function updateVisitedRealms(accessToken: string, shareId: string) {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SERVICE_ROLE!,
-    )
+    const supabase = createUserClient(accessToken)
 
     // get user data
     const { data: user, error: userError } = await supabase.auth.getUser(accessToken)
