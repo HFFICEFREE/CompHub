@@ -35,6 +35,16 @@ type RealmRow = {
     only_owner: boolean
 }
 
+// Encerra a sessão do realm e desliga todo mundo que estava nela.
+// (Fica aqui fora de session.ts para não criar ciclo de import com sockets/helpers)
+function kickSessionPlayers(realmId: string, reason: string) {
+    const players = sessionManager.terminateSession(realmId)
+    for (const player of players) {
+        io.sockets.sockets.get(player.socketId)?.leave(realmId)
+        io.to(player.socketId).emit('kicked', reason)
+    }
+}
+
 function onRealmUpdate(payload: RealtimePostgresUpdatePayload<RealmRow>) {
     const id = payload.new.id
     let refresh = false
@@ -48,14 +58,14 @@ function onRealmUpdate(payload: RealtimePostgresUpdatePayload<RealmRow>) {
         refresh = true
     }
     if (refresh) {
-        sessionManager.terminateSession(id, "This realm has been changed by the owner.")
+        kickSessionPlayers(id, "This realm has been changed by the owner.")
     }
 }
 
 function onRealmDelete(payload: RealtimePostgresDeletePayload<RealmRow>) {
     // Em DELETE o Supabase envia apenas as colunas da PK em `old`
     if (payload.old.id) {
-        sessionManager.terminateSession(payload.old.id, "This realm is no longer available.")
+        kickSessionPlayers(payload.old.id, "This realm is no longer available.")
     }
 }
 

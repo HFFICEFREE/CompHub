@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { kickPlayer } from './sockets/helpers'
 import { v4 as uuidv4 } from 'uuid'
 
 export type RealmData = {
@@ -81,10 +80,22 @@ export class SessionManager {
         // If the player is not in a realm, do nothing
         if (!realmId) return
 
-        const player = this.sessions[realmId].getPlayer(uid)
-        delete this.socketIdToPlayerId[player.socketId]
         delete this.playerIdToRealmId[uid]
-        this.sessions[realmId].removePlayer(uid)
+
+        const session = this.sessions[realmId]
+        // A sessão pode já ter sido terminada (ex.: realm atualizado pelo dono)
+        if (!session) return
+
+        const player = session.getPlayer(uid)
+        if (player) {
+            delete this.socketIdToPlayerId[player.socketId]
+            session.removePlayer(uid)
+        }
+
+        // Evita vazamento de memória: sessões sem ninguém online são destruídas
+        if (session.getPlayerCount() === 0) {
+            delete this.sessions[realmId]
+        }
     }
 
     public getSocketIdsInRoom(realmId: string, roomIndex: number): string[] {
@@ -99,16 +110,21 @@ export class SessionManager {
         return true
     }
 
-    public terminateSession(id: string, reason: string) {
+    public terminateSession(id: string): Player[] {
         const session = this.sessions[id]
-        if (!session) return
+        if (!session) return []
 
-        const players = session.getPlayerIds()
-        players.forEach(player => {
-            kickPlayer(player, reason)
-        })
+        const players = session.getPlayerIds().map((uid) => session.getPlayer(uid))
+
+        // Limpa todos os índices do manager para não vazar memória
+        for (const player of players) {
+            delete this.socketIdToPlayerId[player.socketId]
+            delete this.playerIdToRealmId[player.uid]
+        }
 
         delete this.sessions[id]
+
+        return players
     }
 }
 
@@ -165,7 +181,10 @@ export class Session {
         this.playerRooms[player.room].delete(uid)
 
         const coordKey = `${player.x}, ${player.y}`
-        delete this.playerPositions[player.room][coordKey]
+        // Remove apenas ESTE jogador da coordenada: apagar o Set inteiro
+        // fazia os outros jogadores no mesmo tile sumirem do índice,
+        // quebrando o cálculo de proximidade
+        this.playerPositions[player.room][coordKey]?.delete(uid)
 
         delete this.players[uid]
     }

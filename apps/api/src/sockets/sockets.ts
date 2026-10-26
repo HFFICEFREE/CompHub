@@ -77,7 +77,6 @@ export function sockets(io: Server) {
             const uid = socket.handshake.query.uid as string
             const rejectJoin = (reason: string) => {
                 socket.emit('failedToJoinRoom', reason)
-                joiningInProgress.delete(uid)
             }
 
             if (JoinRealm.safeParse(realmData).success === false) {
@@ -85,64 +84,73 @@ export function sockets(io: Server) {
             }
 
             if (joiningInProgress.has(uid)) {
-                rejectJoin('Already joining a space.')
+                // Bug: faltava return — o fluxo continuava e entrava em duplicidade
+                return rejectJoin('Already joining a space.')
             }
             joiningInProgress.add(uid)
 
-            const session = sessionManager.getSession(realmData.realmId)
-            if (session) {
-                const playerCount = session.getPlayerCount()
-                if (playerCount >= 30) {
-                    return rejectJoin("Space is full. It's 30 players max.")
-                } 
-            }
-
-            const { data, error } = await supabase.from('realms').select('owner_id, share_id, map_data, only_owner').eq('id', realmData.realmId).single()
-
-            if (error || !data) {
-                return rejectJoin('Space not found.')
-            }
-            const { data: profile, error: profileError } = await supabase.from('profiles').select('skin').eq('id', uid).single()
-            if (profileError) {
-                return rejectJoin('Failed to get profile.')
-            }
-
-            const realm = data
-
-            const join = async () => {
-                if (!sessionManager.getSession(realmData.realmId)) {
-                    sessionManager.createSession(realmData.realmId, data.map_data)
+            try {
+                const session = sessionManager.getSession(realmData.realmId)
+                if (session) {
+                    const playerCount = session.getPlayerCount()
+                    if (playerCount >= 30) {
+                        return rejectJoin("Space is full. It's 30 players max.")
+                    }
                 }
 
-                const currentSession = sessionManager.getPlayerSession(uid)
-                if (currentSession) {
-                    kickPlayer(uid, 'You have logged in from another location.')
+                const { data, error } = await supabase.from('realms').select('owner_id, share_id, map_data, only_owner').eq('id', realmData.realmId).single()
+
+                if (error || !data) {
+                    return rejectJoin('Space not found.')
+                }
+                const { data: profile, error: profileError } = await supabase.from('profiles').select('skin').eq('id', uid).single()
+                if (profileError) {
+                    return rejectJoin('Failed to get profile.')
                 }
 
-                const user = users.getUser(uid)!
-                const username = formatEmailToName(user.user_metadata.email)
-                sessionManager.addPlayerToSession(socket.id, realmData.realmId, uid, username, profile.skin)
-                const newSession = sessionManager.getPlayerSession(uid)
-                const player = newSession.getPlayer(uid)   
+                const realm = data
 
-                socket.join(realmData.realmId)
-                socket.emit('joinedRealm')
-                emit('playerJoinedRoom', player)
+                const join = () => {
+                    if (!sessionManager.getSession(realmData.realmId)) {
+                        sessionManager.createSession(realmData.realmId, data.map_data)
+                    }
+
+                    const currentSession = sessionManager.getPlayerSession(uid)
+                    if (currentSession) {
+                        kickPlayer(uid, 'You have logged in from another location.')
+                    }
+
+                    const user = users.getUser(uid)!
+                    const username = formatEmailToName(user.user_metadata.email)
+                    sessionManager.addPlayerToSession(socket.id, realmData.realmId, uid, username, profile.skin)
+                    const newSession = sessionManager.getPlayerSession(uid)
+                    const player = newSession.getPlayer(uid)
+
+                    socket.join(realmData.realmId)
+                    socket.emit('joinedRealm')
+                    emit('playerJoinedRoom', player)
+                }
+
+                // Autorização: dono sempre entra; senão, precisa de link válido
+                if (realm.owner_id === uid) {
+                    return join()
+                }
+
+                if (realm.only_owner) {
+                    return rejectJoin('This realm is private right now. Come back later!')
+                }
+
+                if (realm.share_id === realmData.shareId) {
+                    return join()
+                } else {
+                    return rejectJoin('The share link has been changed.')
+                }
+            } catch {
+                // Sem este finally, uma exceção deixaria o uid travado em
+                // joiningInProgress e o jogador nunca mais conseguiria entrar
+                rejectJoin('Failed to join the space.')
+            } finally {
                 joiningInProgress.delete(uid)
-            }
-
-            if (realm.owner_id === socket.handshake.query.uid) {
-                return join()
-            }
-
-            if (realm.only_owner) {
-                return rejectJoin('This realm is private right now. Come back later!')
-            }
-
-            if (realm.share_id === realmData.shareId) {
-                return join()
-            } else {
-                return rejectJoin('The share link has been changed.')
             }
         })
 
