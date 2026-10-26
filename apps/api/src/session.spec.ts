@@ -173,6 +173,14 @@ describe('Session — validação de movimento e teleport', () => {
         // sala inexistente não explode
         expect(session.getTeleporterAt(5, 0, 2)).toBeUndefined()
     })
+
+    it('isWalkable valida sala, coordenadas inteiras e tiles impassable', () => {
+        expect(session.isWalkable(0, 0, 0)).toBe(true)
+        expect(session.isWalkable(0, 2, 0)).toBe(false)
+        expect(session.isWalkable(1, 0, 0)).toBe(true)
+        expect(session.isWalkable(9, 0, 0)).toBe(false)
+        expect(session.isWalkable(0, 0.5, 0)).toBe(false)
+    })
 })
 
 describe('SessionManager', () => {

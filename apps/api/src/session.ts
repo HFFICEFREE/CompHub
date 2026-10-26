@@ -248,6 +248,12 @@ export class Session {
         return findPath([startX, startY], [endX, endY], this.getBlockedTiles(roomIndex)) !== null
     }
 
+    public isWalkable(roomIndex: number, x: number, y: number): boolean {
+        if (!Number.isInteger(roomIndex) || roomIndex < 0 || roomIndex >= this.map_data.rooms.length) return false
+        if (!Number.isInteger(x) || !Number.isInteger(y)) return false
+        return !this.getBlockedTiles(roomIndex).has(`${x}, ${y}`)
+    }
+
     public getTeleporterAt(roomIndex: number, x: number, y: number) {
         return this.map_data.rooms[roomIndex]?.tilemap[`${x}, ${y}`]?.teleporter
     }

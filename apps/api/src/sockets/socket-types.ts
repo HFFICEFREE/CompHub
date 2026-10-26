@@ -9,14 +9,14 @@ export const JoinRealm = z.object({
 export const Disconnect = z.any()
 
 export const MovePlayer = z.object({
-    x: z.number(),
-    y: z.number(),
+    x: z.number().int(),
+    y: z.number().int(),
 })
 
 export const Teleport = z.object({
-    x: z.number(),
-    y: z.number(),
-    roomIndex: z.number(),
+    x: z.number().int(),
+    y: z.number().int(),
+    roomIndex: z.number().int(),
 })
 
 export const ChangedSkin = z.string()

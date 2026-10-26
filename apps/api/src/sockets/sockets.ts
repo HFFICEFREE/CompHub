@@ -182,6 +182,10 @@ export function sockets(io: Server) {
 
             if (!moveLimiter.allow(uid)) return
 
+            const distance = Math.abs(data.x - player.x) + Math.abs(data.y - player.y)
+            if (distance !== 1) return
+            if (!session.isWalkable(player.room, data.x, data.y)) return
+
             // O cliente só emite movimentos alcançáveis (BFS dele); como o
             // conjunto de obstáculos do servidor é subconjunto do dele,
             // caminho legítimo sempre passa aqui e atalho é recusado
@@ -219,7 +223,7 @@ export function sockets(io: Server) {
             const teleporter = session.getTeleporterAt(player.room, player.x, player.y)
             if (!teleporter) return
             if (teleporter.roomIndex !== data.roomIndex || teleporter.x !== data.x || teleporter.y !== data.y) return
-            if (!session.map_data.rooms[data.roomIndex]) return
+            if (!session.isWalkable(data.roomIndex, data.x, data.y)) return
 
             if (player.room !== data.roomIndex) {
                 emit('playerLeftRoom', uid)
