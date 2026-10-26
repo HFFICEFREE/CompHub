@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { GetPlayersInRoom, GetServerName, IsOwnerOfServer, UserIsInGuild, GetChannelName, GetPlayerCounts } from './route-types'
+import { GetPlayersInRoom, GetPlayerCounts } from './route-types'
 import { supabase } from '../supabase'
 import { z } from 'zod'
 import { sessionManager } from '../session'
@@ -84,7 +84,7 @@ export default function routes(): Router {
             return res.status(400).json({ message: 'Too many server IDs' })
         }
 
-        const { data: user, error: error } = await supabase.auth.getUser(access_token)
+        const { error } = await supabase.auth.getUser(access_token)
 
         if (error) {
             return res.status(401).json({ message: 'Invalid access token' })

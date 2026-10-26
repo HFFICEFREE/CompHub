@@ -23,4 +23,4 @@ export const ChangedSkin = z.string()
 
 export const NewMessage = z.string()
 
-export type OnEventCallback = (args: { session: Session, data?: any }) => void
+export type OnEventCallback<T = unknown> = (args: { session: Session, data: T }) => void
