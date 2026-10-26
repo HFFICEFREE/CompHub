@@ -1,5 +1,5 @@
 import { Server } from 'socket.io'
-import { JoinRealm, Disconnect, OnEventCallback, MovePlayer, Teleport, ChangedSkin, NewMessage } from './socket-types'
+import { JoinRealm, OnEventCallback, MovePlayer, Teleport, ChangedSkin, NewMessage } from './socket-types'
 import { z } from 'zod'
 import { supabase } from '../supabase'
 import { users } from '../Users'
@@ -185,13 +185,17 @@ export function sockets(io: Server) {
         }))
 
         // Handle a disconnection
-        on('disconnect', Disconnect, ({ session }) => {
+        socket.on('disconnect', () => {
             const uid = socket.handshake.query.uid as string
+            users.removeUser(uid)
+
+            const session = sessionManager.getPlayerSession(uid)
+            if (!session) return
+
             const socketIds = sessionManager.getSocketIdsInRoom(session.id, session.getPlayerRoom(uid))
             const success = sessionManager.logOutBySocketId(socket.id)
             if (success) {
                 emitToSocketIds(socketIds, 'playerLeftRoom', uid)
-                users.removeUser(uid)
             }
         })
 
