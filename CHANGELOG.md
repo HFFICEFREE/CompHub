@@ -5,6 +5,36 @@ Todas as mudanças notáveis neste projeto são documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e este projeto adota [Semver](https://semver.org/lang/pt-BR/).
 
+## [1.1.0] - 2026-10-26
+
+Fase 1 concluída: o servidor deixa de confiar no cliente. Validação de
+movimento/teleport, rate limit por jogador e checagem de dono no editor.
+
+### Segurança
+
+- **Validação de movimento no servidor**: `movePlayer` roda o mesmo BFS 4-direcional do cliente contra o tilemap da sessão — coordenadas arbitrárias, teleporte e atravessar paredes são recusados, sem efeitos colaterais em movimento legítimo (os obstáculos do servidor são um subconjunto dos do cliente).
+- **Validação de teleport**: o tile de origem do jogador precisa ter um `teleporter` apontando exatamente para o destino pedido, e a sala de destino precisa existir no mapa.
+- **Rate limit por jogador** (em memória, por uid): `movePlayer` 30/s, `sendMessage` 5/2s, `changedSkin` 3/2s e `teleport` 5/2s.
+- **Checagem de dono no editor e no manage**: `/editor/[id]` e `/manage/[id]` agora exigem `owner_id === user.id` — antes, qualquer usuário logado abria a UI de edição de qualquer realm (a checagem só existia em comentário).
+
+### Corrigido
+
+- `removePlayer` apagava o índice de posições inteiro quando alguém saía de um tile compartilhado, fazendo jogadores sumirem do cálculo de proximidade.
+- Sessões ficavam em memória para sempre depois que o último jogador saía.
+- `logOutPlayer` estourava `TypeError` (e vazava índices) quando a sessão já tinha sido terminada, ex.: dono salvando o mapa enquanto alguém desconectava.
+- `joinRealm` sem `return` no guard de join duplicado e sem `try/finally`: um erro podia deixar o `uid` travado em `joiningInProgress` para sempre.
+- `signal.off('showKickedModal')` removia o handler errado, acumulando listeners a cada montagem.
+
+### Adicionado
+
+- **29 testes Jest na API** (sessão/proximidade, pathfinding do servidor, rate limiter); `pnpm test` roda na CI de todo PR.
+- `apps/api/src/pathfinding.ts` (port fiel do BFS do cliente, com teto de coordenadas) e `apps/api/src/rate-limit.ts` (`RateLimiter` simples, pronto para ganhar implementação em Redis na Fase 3).
+
+### Alterado
+
+- `terminateSession` retorna os jogadores afetados e limpa os índices do manager; a emissão de `kicked` saiu de `session.ts` para `index.ts`, rompendo o ciclo de imports `session → helpers → index`.
+- Todos os handlers de socket ganharam guard para jogador inexistente na sessão (evita `TypeError` logo após kick/disconnect).
+
 ## [1.0.0] - 2026-10-26
 
 Primeira release oficial do CompHub — monorepo validado com `typecheck` e `build` em verde.
@@ -42,4 +72,5 @@ Primeira release oficial do CompHub — monorepo validado com `typecheck` e `bui
 - **83 personagens** com sistema de skins e animações.
 - **Salas e teleporte**, movimentação baseada em tiles e autenticação com Supabase Auth.
 
+[1.1.0]: https://github.com/HFFICEFREE/CompHub/releases/tag/v1.1.0
 [1.0.0]: https://github.com/HFFICEFREE/CompHub/releases/tag/v1.0.0
