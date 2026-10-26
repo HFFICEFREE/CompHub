@@ -48,7 +48,7 @@ const PlayClient:React.FC<PlayClientProps> = ({ mapData, username, access_token,
         signal.on('switchSkin', onSwitchSkin)
 
         return () => {
-            signal.off('showKickedModal', onShowDisconnectModal)
+            signal.off('showKickedModal', onShowKickedModal)
             signal.off('showDisconnectModal', onShowDisconnectModal)
             signal.off('switchSkin', onSwitchSkin)
         }
