@@ -118,6 +118,63 @@ describe('Session', () => {
     })
 })
 
+describe('Session — validação de movimento e teleport', () => {
+    // Sala 0 com uma parede em (2, 0) e um teleporter em (0, 2)
+    function makeRealmWithWalls(): RealmData {
+        return {
+            spawnpoint: { roomIndex: 0, x: 0, y: 0 },
+            rooms: [
+                {
+                    name: 'Room 0',
+                    tilemap: {
+                        '2, 0': { impassable: true },
+                        '0, 2': { teleporter: { roomIndex: 1, x: 0, y: 0 } },
+                    },
+                },
+                { name: 'Room 1', tilemap: {} },
+            ],
+        }
+    }
+
+    let session: Session
+
+    beforeEach(() => {
+        session = new Session('realm-walls', makeRealmWithWalls())
+    })
+
+    it('getBlockedTiles devolve apenas os tiles impassable (cacheado)', () => {
+        const blocked = session.getBlockedTiles(0)
+
+        expect(blocked.has('2, 0')).toBe(true)
+        // teleporter e tiles normais não são obstáculo
+        expect(blocked.has('0, 2')).toBe(false)
+        expect(blocked.has('0, 0')).toBe(false)
+        // é cache: chamadas seguintes devolvem o mesmo Set
+        expect(session.getBlockedTiles(0)).toBe(blocked)
+    })
+
+    it('hasPath aceita movimento alcançável', () => {
+        expect(session.hasPath(0, 0, 0, 1, 0)).toBe(true)
+        // andar em volta da parede é legítimo (o plano é aberto)
+        expect(session.hasPath(0, 0, 0, 3, 0)).toBe(true)
+    })
+
+    it('hasPath recusa destino que é parede', () => {
+        expect(session.hasPath(0, 0, 0, 2, 0)).toBe(false)
+    })
+
+    it('hasPath recusa sala inexistente', () => {
+        expect(session.hasPath(9, 0, 0, 1, 0)).toBe(false)
+    })
+
+    it('getTeleporterAt devolve o teleporter do tile ou undefined', () => {
+        expect(session.getTeleporterAt(0, 0, 2)).toMatchObject({ roomIndex: 1, x: 0, y: 0 })
+        expect(session.getTeleporterAt(0, 1, 1)).toBeUndefined()
+        // sala inexistente não explode
+        expect(session.getTeleporterAt(5, 0, 2)).toBeUndefined()
+    })
+})
+
 describe('SessionManager', () => {
     let manager: SessionManager
 

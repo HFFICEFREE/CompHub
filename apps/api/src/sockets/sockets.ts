@@ -7,8 +7,18 @@ import { sessionManager } from '../session'
 import { removeExtraSpaces } from '../utils'
 import { kickPlayer } from './helpers'
 import { formatEmailToName } from '../utils'
+import { RateLimiter } from '../rate-limit'
 
 const joiningInProgress = new Set<string>()
+
+// Rate limits por uid. Generosos de propósito: o cliente NÃO retenta
+// movimentos perdidos (o personagem continua andando localmente), então
+// derrubar um move legítimo causaria desync visual. Mesma filosofia do
+// limite de 30 jogadores/sessão: proteger o servidor sem quebrar a UX.
+const moveLimiter = new RateLimiter(30, 1_000)
+const messageLimiter = new RateLimiter(5, 2_000)
+const skinLimiter = new RateLimiter(3, 2_000)
+const teleportLimiter = new RateLimiter(5, 2_000)
 
 function protectConnection(io: Server) {
     io.use(async (socket, next) => {
@@ -165,8 +175,18 @@ export function sockets(io: Server) {
             }
         })
 
-        on('movePlayer', MovePlayer, ({ session, data }) => {  
-            const player = session.getPlayer(socket.handshake.query.uid as string)
+        on('movePlayer', MovePlayer, ({ session, data }) => {
+            const uid = socket.handshake.query.uid as string
+            const player = session.getPlayer(uid)
+            if (!player) return
+
+            if (!moveLimiter.allow(uid)) return
+
+            // O cliente só emite movimentos alcançáveis (BFS dele); como o
+            // conjunto de obstáculos do servidor é subconjunto do dele,
+            // caminho legítimo sempre passa aqui e atalho é recusado
+            if (!session.hasPath(player.room, player.x, player.y, data.x, data.y)) return
+
             const changedPlayers = session.movePlayer(player.uid, data.x, data.y)
 
             emit('playerMoved', {
@@ -187,14 +207,27 @@ export function sockets(io: Server) {
         on('teleport', Teleport, ({ session, data }) => {
             const uid = socket.handshake.query.uid as string
             const player = session.getPlayer(uid)
+            if (!player) return
+
+            if (!teleportLimiter.allow(uid)) return
+
+            // O cliente só emite 'teleport' depois de pisar num tile com
+            // teleporter (PlayApp.teleportIfOnTeleportSquare lê o teleporter
+            // do tile ATUAL do jogador). Validamos o mesmo: o tile de origem
+            // precisa ter um teleporter apontando exatamente para o destino
+            // pedido, e o destino precisa existir no mapa.
+            const teleporter = session.getTeleporterAt(player.room, player.x, player.y)
+            if (!teleporter) return
+            if (teleporter.roomIndex !== data.roomIndex || teleporter.x !== data.x || teleporter.y !== data.y) return
+            if (!session.map_data.rooms[data.roomIndex]) return
+
             if (player.room !== data.roomIndex) {
                 emit('playerLeftRoom', uid)
-                const session = sessionManager.getPlayerSession(uid)
                 const changedPlayers = session.changeRoom(uid, data.roomIndex, data.x, data.y)
                 emit('playerJoinedRoom', player)
 
-                for (const uid of changedPlayers) {
-                    const changedPlayerData = session.getPlayer(uid)
+                for (const changedUid of changedPlayers) {
+                    const changedPlayerData = session.getPlayer(changedUid)
 
                     emitToSocketIds([changedPlayerData.socketId], 'proximityUpdate', {
                         proximityId: changedPlayerData.proximityId
@@ -204,8 +237,8 @@ export function sockets(io: Server) {
                 const changedPlayers = session.movePlayer(player.uid, data.x, data.y)
                 emit('playerTeleported', { uid, x: player.x, y: player.y })
 
-                for (const uid of changedPlayers) {
-                    const changedPlayerData = session.getPlayer(uid)
+                for (const changedUid of changedPlayers) {
+                    const changedPlayerData = session.getPlayer(changedUid)
 
                     emitToSocketIds([changedPlayerData.socketId], 'proximityUpdate', {
                         proximityId: changedPlayerData.proximityId
@@ -217,6 +250,10 @@ export function sockets(io: Server) {
         on('changedSkin', ChangedSkin, ({ session, data }) => {
             const uid = socket.handshake.query.uid as string
             const player = session.getPlayer(uid)
+            if (!player) return
+
+            if (!skinLimiter.allow(uid)) return
+
             player.skin = data
             emit('playerChangedSkin', { uid, skin: player.skin })
         })
@@ -225,9 +262,11 @@ export function sockets(io: Server) {
             // cannot exceed 300 characters
             if (data.length > 300 || data.trim() === '') return
 
+            const uid = socket.handshake.query.uid as string
+            if (!messageLimiter.allow(uid)) return
+
             const message = removeExtraSpaces(data)
 
-            const uid = socket.handshake.query.uid as string
             emit('receiveMessage', { uid, message })
         })
     })
