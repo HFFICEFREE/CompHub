@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import http from 'http'
@@ -6,8 +7,8 @@ import { sockets } from './sockets/sockets'
 import routes from './routes/routes'
 import { supabase } from './supabase'
 import { sessionManager } from './session'
-
-require('dotenv').config()
+import type { RealmData } from './session'
+import type { RealtimePostgresUpdatePayload, RealtimePostgresDeletePayload } from '@supabase/supabase-js'
 
 const app = express()
 const server = http.createServer(app)
@@ -27,7 +28,14 @@ app.use(routes())
 
 sockets(io)
 
-function onRealmUpdate(payload: any) {
+type RealmRow = {
+    id: string
+    map_data: RealmData
+    share_id: string
+    only_owner: boolean
+}
+
+function onRealmUpdate(payload: RealtimePostgresUpdatePayload<RealmRow>) {
     const id = payload.new.id
     let refresh = false
     if (JSON.stringify(payload.new.map_data) !== JSON.stringify(payload.old.map_data)) {
@@ -44,8 +52,11 @@ function onRealmUpdate(payload: any) {
     }
 }
 
-function onRealmDelete(payload: any) {
-    sessionManager.terminateSession(payload.old.id, "This realm is no longer available.")
+function onRealmDelete(payload: RealtimePostgresDeletePayload<RealmRow>) {
+    // Em DELETE o Supabase envia apenas as colunas da PK em `old`
+    if (payload.old.id) {
+        sessionManager.terminateSession(payload.old.id, "This realm is no longer available.")
+    }
 }
 
 supabase

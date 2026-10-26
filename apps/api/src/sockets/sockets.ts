@@ -38,20 +38,20 @@ export function sockets(io: Server) {
     // Handle a connection
     io.on('connection', (socket) => {
 
-        function on(eventName: string, schema: z.ZodTypeAny, callback: OnEventCallback) {
-            socket.on(eventName, (data: any) => {
-                const success = schema.safeParse(data).success
-                if (!success) return
+        function on<T>(eventName: string, schema: z.ZodType<T>, callback: OnEventCallback<T>) {
+            socket.on(eventName, (data: unknown) => {
+                const parsed = schema.safeParse(data)
+                if (!parsed.success) return
 
                 const session = sessionManager.getPlayerSession(socket.handshake.query.uid as string)
                 if (!session) {
                     return
                 }
-                callback({ session, data })
+                callback({ session, data: parsed.data })
             })
         }
 
-        function emit(eventName: string, data: any) {
+        function emit(eventName: string, data: unknown) {
             const session = sessionManager.getPlayerSession(socket.handshake.query.uid as string)
             if (!session) {
                 return
@@ -67,7 +67,7 @@ export function sockets(io: Server) {
             }
         }
 
-        function emitToSocketIds(socketIds: string[], eventName: string, data: any) {
+        function emitToSocketIds(socketIds: string[], eventName: string, data: unknown) {
             for (const socketId of socketIds) {
                 io.to(socketId).emit(eventName, data)
             }
@@ -147,7 +147,7 @@ export function sockets(io: Server) {
         })
 
         // Handle a disconnection
-        on('disconnect', Disconnect, ({ session, data }) => {
+        on('disconnect', Disconnect, ({ session }) => {
             const uid = socket.handshake.query.uid as string
             const socketIds = sessionManager.getSocketIdsInRoom(session.id, session.getPlayerRoom(uid))
             const success = sessionManager.logOutBySocketId(socket.id)
@@ -213,7 +213,7 @@ export function sockets(io: Server) {
             emit('playerChangedSkin', { uid, skin: player.skin })
         })
 
-        on('sendMessage', NewMessage, ({ session, data }) => {
+        on('sendMessage', NewMessage, ({ data }) => {
             // cannot exceed 300 characters
             if (data.length > 300 || data.trim() === '') return
 
