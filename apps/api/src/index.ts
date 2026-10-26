@@ -10,17 +10,38 @@ import { sessionManager } from './session'
 import type { RealmData } from './session'
 import type { RealtimePostgresUpdatePayload, RealtimePostgresDeletePayload } from '@supabase/supabase-js'
 
+function getFrontendOrigins(): string[] {
+    const configuredOrigins = process.env.FRONTEND_URL
+        ?.split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean)
+
+    if (!configuredOrigins?.length) {
+        throw new Error('FRONTEND_URL environment variable is required.')
+    }
+
+    return configuredOrigins.map((origin) => {
+        try {
+            return new URL(origin).origin
+        } catch {
+            throw new Error(`Invalid origin in FRONTEND_URL: ${origin}`)
+        }
+    })
+}
+
+const allowedOrigins = getFrontendOrigins()
+
 const app = express()
 const server = http.createServer(app)
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL
+    origin: allowedOrigins
 }))
 
 // Initialize Socket.IO server
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.FRONTEND_URL
+    origin: allowedOrigins
   }
 })
 
