@@ -182,8 +182,6 @@ export function sockets(io: Server) {
 
             if (!moveLimiter.allow(uid)) return
 
-            const distance = Math.abs(data.x - player.x) + Math.abs(data.y - player.y)
-            if (distance !== 1) return
             if (!session.isWalkable(player.room, data.x, data.y)) return
 
             // O cliente só emite movimentos alcançáveis (BFS dele); como o
