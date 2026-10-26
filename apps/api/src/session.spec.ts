@@ -1,4 +1,9 @@
+import { createHash } from 'crypto'
 import { RealmData, Session, SessionManager, defaultSkin } from './session'
+
+function channelId(realmId: string, channel: string) {
+    return createHash('md5').update(`${realmId}-${channel}`).digest('hex').substring(0, 16)
+}
 
 function makeRealmData(roomCount = 1): RealmData {
     return {
@@ -90,6 +95,38 @@ describe('Session', () => {
         session.movePlayer('uid-1', 0, 0)
         expect(session.getPlayer('uid-1')).toMatchObject({ x: 0, y: 0 })
         expect(session.getPlayerCount()).toBe(1)
+    })
+
+    it('getPlayerChannelId deriva o canal do grupo de proximidade', () => {
+        session.addPlayer('socket-1', 'uid-1', 'Alice', defaultSkin)
+        session.addPlayer('socket-2', 'uid-2', 'Bob', defaultSkin)
+        session.movePlayer('uid-1', 1, 1)
+
+        const proximityId = session.getPlayer('uid-1').proximityId!
+        expect(session.getPlayerChannelId('uid-1')).toBe(channelId('realm-1', proximityId))
+        expect(session.getPlayerChannelId('uid-2')).toBe(channelId('realm-1', proximityId))
+    })
+
+    it('getPlayerChannelId usa a área privada do tile atual', () => {
+        const privateSession = new Session('realm-private', {
+            spawnpoint: { roomIndex: 0, x: 0, y: 0 },
+            rooms: [{
+                name: 'Room 0',
+                tilemap: {
+                    '0, 0': { privateAreaId: 'secret-area' },
+                },
+            }],
+        })
+        privateSession.addPlayer('socket-1', 'uid-1', 'Alice', defaultSkin)
+
+        expect(privateSession.getPlayerChannelId('uid-1')).toBe(channelId('realm-private', 'secret-area'))
+    })
+
+    it('getPlayerChannelId retorna null sem proximidade ou área privada', () => {
+        session.addPlayer('socket-1', 'uid-1', 'Alice', defaultSkin)
+
+        expect(session.getPlayerChannelId('uid-1')).toBeNull()
+        expect(session.getPlayerChannelId('uid-missing')).toBeNull()
     })
 
     it('jogadores próximos (<= 3 tiles) compartilham o mesmo proximityId', () => {

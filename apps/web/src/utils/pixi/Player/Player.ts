@@ -295,14 +295,14 @@ export class Player {
         if (tile && tile.privateAreaId) {
             if (tile.privateAreaId !== this.currentChannel) {
                 this.currentChannel = tile.privateAreaId
-                videoChat.joinChannel(tile.privateAreaId, this.playApp.uid + this.username, this.playApp.realmId)
+                videoChat.joinChannel(tile.privateAreaId, this.playApp.uid + this.username)
                 this.playApp.fadeInTiles(tile.privateAreaId)
             }
         } else {
             if (this.playApp.proximityId) {
                 if (this.playApp.proximityId !== this.currentChannel) {
                     this.currentChannel = this.playApp.proximityId
-                    videoChat.joinChannel(this.playApp.proximityId, this.playApp.uid + this.username, this.playApp.realmId)
+                    videoChat.joinChannel(this.playApp.proximityId, this.playApp.uid + this.username)
                     this.playApp.fadeOutTiles()
                 }
             } else if (this.currentChannel !== 'local') {
