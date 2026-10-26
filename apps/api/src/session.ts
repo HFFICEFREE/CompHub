@@ -70,10 +70,14 @@ export class SessionManager {
         return this.sessions[realmId]
     }
 
-    public addPlayerToSession(socketId: string, realmId: string, uid: string, username: string, skin: string) {
-        this.sessions[realmId].addPlayer(socketId, uid, username, skin)
+    public addPlayerToSession(socketId: string, realmId: string, uid: string, username: string, skin: string): boolean {
+        const session = this.sessions[realmId]
+        if (!session) return false
+        if (!session.addPlayer(socketId, uid, username, skin)) return false
+
         this.playerIdToRealmId[uid] = realmId
         this.socketIdToPlayerId[socketId] = uid
+        return true
     }
 
     public logOutPlayer(uid: string) {
@@ -154,9 +158,15 @@ export class Session {
         }
     }
 
-    public addPlayer(socketId: string, uid: string, username: string, skin: string) {
-        this.removePlayer(uid)
+    private isValidRoom(roomIndex: number): boolean {
+        return Number.isInteger(roomIndex) && roomIndex >= 0 && roomIndex < this.map_data.rooms.length
+    }
+
+    public addPlayer(socketId: string, uid: string, username: string, skin: string): boolean {
         const spawnIndex = this.map_data.spawnpoint.roomIndex
+        if (!this.isValidRoom(spawnIndex)) return false
+
+        this.removePlayer(uid)
         const spawnX = this.map_data.spawnpoint.x
         const spawnY = this.map_data.spawnpoint.y
 
@@ -178,6 +188,7 @@ export class Session {
         }
         this.playerPositions[spawnIndex][coordKey].add(uid)
         this.players[uid] = player
+        return true
     }
 
     private removeFromPositionIndex(roomIndex: number, coordKey: string, uid: string): void {
@@ -207,6 +218,7 @@ export class Session {
 
     public changeRoom(uid: string, roomIndex: number, x: number, y: number): string[] {
         if (!this.players[uid]) return []
+        if (!this.isValidRoom(roomIndex)) return []
 
         const player = this.players[uid]
 
