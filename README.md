@@ -82,28 +82,22 @@ Construído como uma aplicação web TypeScript usando Next.js, Supabase, Socket
 
 ### Como instalar
 
-Instale as dependências do cliente.
-```bash
-cd frontend
-yarn install
-```
+O projeto é um monorepo gerenciado com **pnpm workspaces**. Na raiz:
 
-Instale as dependências do servidor.
 ```bash
-cd backend
-yarn install
+pnpm install
 ```
 
 O projeto requer tanto Supabase quanto Agora - você precisará criar projetos em ambas as plataformas.
 
-Crie um arquivo .env na pasta `backend` com as seguintes variáveis:
+Crie um arquivo `.env` na pasta `apps/api` com as seguintes variáveis:
 ```
 FRONTEND_URL=
 SUPABASE_URL=
 SERVICE_ROLE=
 ```
 
-Crie um arquivo .env.local na pasta `frontend` com as seguintes variáveis:
+Crie um arquivo `.env.local` na pasta `apps/web` com as seguintes variáveis:
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
@@ -114,7 +108,7 @@ NEXT_PUBLIC_AGORA_APP_ID=
 APP_CERTIFICATE=
 ```
 
-Por fim, execute `yarn dev` em ambas as pastas `frontend` e `backend`.
+Por fim, na raiz do projeto execute `pnpm dev` (sobe frontend e backend em paralelo). Para rodar cada um separadamente: `pnpm --filter @comphub/web dev` ou `pnpm --filter @comphub/api dev`.
 
 ### Funcionalidades Principais
 
@@ -147,15 +141,26 @@ Por fim, execute `yarn dev` em ambas as pastas `frontend` e `backend`.
 
 ```
 CompHub/
-├── frontend/          # Aplicação Next.js
-│   ├── app/          # Páginas e componentes principais
-│   ├── components/   # Componentes reutilizáveis
-│   └── utils/        # Utilitários e helpers
-├── backend/          # Servidor Express.js
-│   ├── src/         # Código fonte do servidor
-│   └── routes/      # Rotas da API
-└── public/          # Assets estáticos
+├─ apps/
+│  ├─ web/               # Aplicação Next.js
+│  │  ├─ src/app/        # Páginas e rotas
+│  │  ├─ src/components/ # Componentes reutilizáveis
+│  │  └─ src/utils/      # Utilitários e helpers
+│  └─ api/               # Servidor Express + Socket.io
+│     └─ src/            # Rotas, sockets e sessões
+├─ packages/             # Pacotes compartilhados (schemas/tipos)
+├─ pnpm-workspace.yaml   # Configuração do monorepo
+└─ Procfile              # Processo de deploy do backend
 ```
+
+### Comandos úteis
+
+| Comando | Descrição |
+|---|---|
+| `pnpm install` | Instala dependências de todos os workspaces |
+| `pnpm dev` | Sobe web + api em paralelo |
+| `pnpm build` | Build de produção de todos os workspaces |
+| `pnpm typecheck` | Verificação de tipos em todos os workspaces |
 
 ### Tecnologias Utilizadas
 

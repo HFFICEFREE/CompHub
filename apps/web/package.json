@@ -1,24 +1,26 @@
 {
+  "name": "@comphub/web",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
   },
   "type": "module",
   "dependencies": {
     "@headlessui/react": "^1.7.19",
     "@heroicons/react": "^2.1.4",
     "@phosphor-icons/react": "^2.1.5",
-    "@supabase/ssr": "latest",
-    "@supabase/supabase-js": "latest",
+    "@supabase/ssr": "0.5.1",
+    "@supabase/supabase-js": "2.45.4",
     "agora-rtc-react": "^2.3.0",
     "agora-rtc-sdk-ng": "^4.22.1",
     "agora-token": "^2.0.3",
     "autoprefixer": "10.4.17",
     "geist": "^1.2.1",
     "gsap": "^3.12.5",
-    "next": "latest",
+    "next": "14.2.14",
     "pixi.js": "^8.1.0",
     "postcss": "8.4.33",
     "react": "18.2.0",
