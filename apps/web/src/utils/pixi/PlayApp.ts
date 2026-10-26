@@ -474,7 +474,7 @@ export class PlayApp extends App {
         this.destroyPlayers()
         server.disconnect()
 
-        PIXI.Ticker.shared.destroy()
+        PIXI.Ticker.shared.remove(this.fadeOutTicker)
 
         this.removeSignalListeners()
         document.removeEventListener('keydown', this.keydown)
