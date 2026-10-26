@@ -69,9 +69,10 @@ class Server {
 
     public disconnect() {
         if (this.connected) {
-            this.connected = false
             this.socket.disconnect()
         }
+        this.connected = false
+        this.socket = {} as Socket
     }
 
     public async getPlayersInRoom(roomIndex: number) {
