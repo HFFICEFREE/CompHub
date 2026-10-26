@@ -1,6 +1,5 @@
 import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IAgoraRTCRemoteUser, IDataChannelConfig } from 'agora-rtc-sdk-ng'
 import signal from '../signal'
-import { createHash } from 'crypto'
 import { generateToken } from './generateToken'
 
 export class VideoChat {
@@ -11,7 +10,7 @@ export class VideoChat {
 
     private remoteUsers: { [uid: string]: IAgoraRTCRemoteUser } = {}
 
-    private channelTimeout: NodeJS.Timeout | null = null
+    private channelTimeout: ReturnType<typeof setTimeout> | null = null
 
     constructor() {
         AgoraRTC.setLogLevel(4)
@@ -111,7 +110,7 @@ export class VideoChat {
 
         this.channelTimeout = setTimeout(async () => {
             if (channel === this.currentChannel) return
-            const uniqueChannelId = this.createUniqueChannelId(realmId, channel)
+            const uniqueChannelId = await this.createUniqueChannelId(realmId, channel)
             const token = await generateToken(uniqueChannelId)
             if (!token) return
 
@@ -162,9 +161,13 @@ export class VideoChat {
         this.cameraTrack = null
     }
 
-    private createUniqueChannelId(realmId: string, channel: string): string {
-        const combined = `${realmId}-${channel}`;
-        return createHash('md5').update(combined).digest('hex').substring(0, 16);
+    private async createUniqueChannelId(realmId: string, channel: string): Promise<string> {
+        const combined = `${realmId}-${channel}`
+        const data = new TextEncoder().encode(combined)
+        const digest = await crypto.subtle.digest('SHA-256', data)
+        return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0'))
+            .join('')
+            .substring(0, 16)
     }
 }
 
