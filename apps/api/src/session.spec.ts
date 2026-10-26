@@ -48,6 +48,21 @@ describe('Session', () => {
         expect(session.getPlayerCount()).toBe(1)
     })
 
+    it('remove a coordenada do índice quando o último jogador sai do tile', () => {
+        session.addPlayer('socket-1', 'uid-1', 'Alice', defaultSkin)
+        session.addPlayer('socket-2', 'uid-2', 'Bob', defaultSkin)
+
+        const positions = (session as unknown as {
+            playerPositions: Record<number, Record<string, Set<string>>>
+        }).playerPositions
+
+        session.removePlayer('uid-1')
+        expect(positions[0]['0, 0'].has('uid-2')).toBe(true)
+
+        session.removePlayer('uid-2')
+        expect(positions[0]['0, 0']).toBeUndefined()
+    })
+
     it('movePlayer atualiza o índice de posições (coordenada antiga é liberada)', () => {
         session.addPlayer('socket-1', 'uid-1', 'Alice', defaultSkin)
 

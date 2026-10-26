@@ -180,6 +180,16 @@ export class Session {
         this.players[uid] = player
     }
 
+    private removeFromPositionIndex(roomIndex: number, coordKey: string, uid: string): void {
+        const coordSet = this.playerPositions[roomIndex][coordKey]
+        if (!coordSet) return
+
+        coordSet.delete(uid)
+        if (coordSet.size === 0) {
+            delete this.playerPositions[roomIndex][coordKey]
+        }
+    }
+
     public removePlayer(uid: string): void {
         if (!this.players[uid]) return
 
@@ -190,7 +200,7 @@ export class Session {
         // Remove apenas ESTE jogador da coordenada: apagar o Set inteiro
         // fazia os outros jogadores no mesmo tile sumirem do índice,
         // quebrando o cálculo de proximidade
-        this.playerPositions[player.room][coordKey]?.delete(uid)
+        this.removeFromPositionIndex(player.room, coordKey, uid)
 
         delete this.players[uid]
     }
@@ -204,9 +214,7 @@ export class Session {
         this.playerRooms[roomIndex].add(uid)
 
         const coordKey = `${player.x}, ${player.y}`
-        if (this.playerPositions[player.room][coordKey]) {
-            this.playerPositions[player.room][coordKey].delete(uid)
-        }
+        this.removeFromPositionIndex(player.room, coordKey, uid)
 
         player.room = roomIndex
         return this.movePlayer(uid, x, y)
@@ -269,20 +277,19 @@ export class Session {
     }
 
     public movePlayer(uid: string, x: number, y: number): string[] {
+        const roomIndex = this.players[uid].room
         const oldCoordKey = `${this.players[uid].x}, ${this.players[uid].y}`
-        if (this.playerPositions[this.players[uid].room][oldCoordKey]) {
-            this.playerPositions[this.players[uid].room][oldCoordKey].delete(uid)
-        }
+        this.removeFromPositionIndex(roomIndex, oldCoordKey, uid)
 
         this.players[uid].x = x
         this.players[uid].y = y
 
         const coordKey = `${x}, ${y}`
-        if (!this.playerPositions[this.players[uid].room][coordKey]) {
-            this.playerPositions[this.players[uid].room][coordKey] = new Set<string>()
+        if (!this.playerPositions[roomIndex][coordKey]) {
+            this.playerPositions[roomIndex][coordKey] = new Set<string>()
         }
 
-        this.playerPositions[this.players[uid].room][coordKey].add(uid)
+        this.playerPositions[roomIndex][coordKey].add(uid)
 
         return this.setProximityIdsWithPlayer(uid)
     }
