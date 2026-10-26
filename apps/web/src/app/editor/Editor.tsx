@@ -94,7 +94,7 @@ const Editor:React.FC<EditorProps> = ({ realmData }) => {
         signal.on('placeTeleporter', onPlaceTeleporter)
 
         return () => {
-            signal.off('resetSpecialTileMode', onResetSpecialTileMode)
+            signal.off('tileSelected', onTileSelected)
             signal.off('resetSpecialTileMode', onResetSpecialTileMode)
             signal.off('placeTeleporter', onPlaceTeleporter)
         }
