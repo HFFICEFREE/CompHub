@@ -82,6 +82,8 @@ Construído como uma aplicação web TypeScript usando Next.js, Supabase, Socket
 
 ### Como instalar
 
+Pré-requisitos: **Node.js 20+** e **pnpm 10** (a versão é fixada em `package.json` via `packageManager` — com `corepack enable` o pnpm correto é escolhido automaticamente).
+
 O projeto é um monorepo gerenciado com **pnpm workspaces**. Na raiz:
 
 ```bash
@@ -92,10 +94,15 @@ O projeto requer tanto Supabase quanto Agora - você precisará criar projetos e
 
 Crie um arquivo `.env` na pasta `apps/api` com as seguintes variáveis:
 ```
-FRONTEND_URL=
+# Obrigatória: origem(ões) do frontend aceita(s) pelo CORS e Socket.io.
+# Várias origens? Separe por vírgula. O servidor NÃO sobe sem ela.
+FRONTEND_URL=http://localhost:3000
 SUPABASE_URL=
 SERVICE_ROLE=
+# PORT=3001   # opcional (default 3001)
 ```
+
+> **Deploy (Heroku)**: a config var `FRONTEND_URL` é obrigatória — ex.: `https://seu-frontend.com`.
 
 Crie um arquivo `.env.local` na pasta `apps/web` com as seguintes variáveis:
 ```
@@ -145,6 +152,7 @@ Por fim, na raiz do projeto execute `pnpm dev` (sobe frontend e backend em paral
 - [x] Sincronização de posições dos jogadores
 - [x] Sistema de salas compartilhadas
 - [x] Gerenciamento de sessões
+- [x] Validação de movimento/teleport no servidor e rate limit por jogador
 
 ### Estrutura do Projeto
 
@@ -157,7 +165,6 @@ CompHub/
 │  │  └─ src/utils/      # Utilitários e helpers
 │  └─ api/               # Servidor Express + Socket.io
 │     └─ src/            # Rotas, sockets e sessões
-├─ packages/             # Pacotes compartilhados (schemas/tipos)
 ├─ pnpm-workspace.yaml   # Configuração do monorepo
 └─ Procfile              # Processo de deploy do backend
 ```
@@ -170,6 +177,16 @@ CompHub/
 | `pnpm dev` | Sobe web + api em paralelo |
 | `pnpm build` | Build de produção de todos os workspaces |
 | `pnpm typecheck` | Verificação de tipos em todos os workspaces |
+| `pnpm test` | Testes Jest (api) |
+| `pnpm lint` | ESLint em todos os workspaces |
+| `pnpm format` | Formata o código com Prettier |
+| `pnpm format:check` | Verifica a formatação sem alterar arquivos |
+
+### Contribuindo
+
+- Todo pull request roda a **CI** no GitHub Actions (`typecheck` + `lint` + `test` + `build`) e precisa estar verde para merge.
+- A branch `main` é **protegida**: sem push direto e sem force-push — merge apenas via PR com a CI verde.
+- Siga [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, `docs:` ...).
 
 ### Tecnologias Utilizadas
 
