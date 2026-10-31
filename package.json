@@ -8,14 +8,14 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "pnpm --parallel -r dev",
+    "dev": "pnpm --filter @comphub/core build && pnpm --parallel -r dev",
     "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "pnpm --filter @comphub/core build && pnpm -r typecheck",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r test",
+    "test": "pnpm --filter @comphub/core build && pnpm -r test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "heroku-postbuild": "pnpm --filter @comphub/api build"
+    "heroku-postbuild": "pnpm --filter @comphub/core build && pnpm --filter @comphub/api build"
   },
   "devDependencies": {
     "prettier": "^3.3.3"

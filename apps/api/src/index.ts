@@ -6,8 +6,7 @@ import { Server as SocketIOServer } from 'socket.io'
 import { sockets } from './sockets/sockets'
 import routes from './routes/routes'
 import { supabase } from './supabase'
-import { sessionManager } from './session'
-import type { RealmData } from './session'
+import { sessionManager, type RealmData } from '@comphub/core'
 import type { RealtimePostgresUpdatePayload, RealtimePostgresDeletePayload } from '@supabase/supabase-js'
 
 function getFrontendOrigins(): string[] {

@@ -163,18 +163,28 @@ CompHub/
 │  │  ├─ src/app/        # Páginas e rotas
 │  │  ├─ src/components/ # Componentes reutilizáveis
 │  │  └─ src/utils/      # Utilitários e helpers
-│  └─ api/               # Servidor Express + Socket.io
-│     └─ src/            # Rotas, sockets e sessões
+│  ├─ api/               # Servidor Express + Socket.io (produção)
+│  │  └─ src/            # Rotas, sockets, auth e bootstrap
+│  └─ api-nest/          # Backend NestJS (migração em curso, ver Fase 2)
+│     └─ src/            # Bootstrap, controllers e config
+├─ packages/
+│  └─ core/              # Domínio puro compartilhado: sessões, pathfinding,
+│                        # rate limit e utilitários (sem Express/Nest/Supabase)
 ├─ pnpm-workspace.yaml   # Configuração do monorepo
 └─ Procfile              # Processo de deploy do backend
 ```
+
+> `@comphub/core` é consumido por `@comphub/api` e `@comphub/api-nest`, de modo
+> que as regras de jogo nunca divergem entre os dois backends. Por ser um pacote
+> com `dist`, ele precisa estar buildado antes de `typecheck`, `test` e `dev` —
+> os scripts da raiz já cuidam disso automaticamente.
 
 ### Comandos úteis
 
 | Comando | Descrição |
 |---|---|
 | `pnpm install` | Instala dependências de todos os workspaces |
-| `pnpm dev` | Sobe web + api em paralelo |
+| `pnpm dev` | Sobe web + api + api-nest em paralelo (compila o core antes) |
 | `pnpm build` | Build de produção de todos os workspaces |
 | `pnpm typecheck` | Verificação de tipos em todos os workspaces |
 | `pnpm test` | Testes Jest (api) |
@@ -191,7 +201,8 @@ CompHub/
 ### Tecnologias Utilizadas
 
 - **Frontend**: Next.js, React, TypeScript, TailwindCSS, Pixi.js
-- **Backend**: Node.js, Express.js, Socket.io
+- **Backend**: Node.js, Express.js, Socket.io (produção) · NestJS (migração da Fase 2)
+- **Domínio compartilhado**: `@comphub/core` (TypeScript puro, sem framework)
 - **Banco de Dados**: Supabase (PostgreSQL)
 - **Chat de Vídeo**: Agora
 - **Gerenciamento de Estado**: React Hooks, Signals

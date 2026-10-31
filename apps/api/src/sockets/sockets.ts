@@ -3,11 +3,8 @@ import { JoinRealm, OnEventCallback, MovePlayer, Teleport, ChangedSkin, NewMessa
 import { z } from 'zod'
 import { supabase } from '../supabase'
 import { users } from '../Users'
-import { sessionManager } from '../session'
-import { removeExtraSpaces } from '../utils'
+import { sessionManager, removeExtraSpaces, formatEmailToName, RateLimiter } from '@comphub/core'
 import { kickPlayer } from './helpers'
-import { formatEmailToName } from '../utils'
-import { RateLimiter } from '../rate-limit'
 
 const joiningInProgress = new Set<string>()
 
