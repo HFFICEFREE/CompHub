@@ -1,4 +1,4 @@
-import { sessionManager } from '../session'
+import { sessionManager } from '@comphub/core'
 import { io } from '..'
 
 export function kickPlayer(uid: string, reason: string) {

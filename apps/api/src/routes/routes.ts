@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { GetPlayersInRoom, GetPlayerCounts } from './route-types'
 import { supabase } from '../supabase'
 import { z } from 'zod'
-import { sessionManager } from '../session'
+import { sessionManager } from '@comphub/core'
 import path from 'path'
 
 export default function routes(): Router {

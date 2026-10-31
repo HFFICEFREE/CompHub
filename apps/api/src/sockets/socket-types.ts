@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { Session } from '../session'
+import type { Session } from '@comphub/core'
 
 export const JoinRealm = z.object({
     realmId: z.string(),
