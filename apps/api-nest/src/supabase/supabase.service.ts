@@ -5,6 +5,14 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 export class SupabaseService {
     private clientInstance: SupabaseClient | undefined
 
+    /**
+     * Diz se ha credenciais para falar com o Supabase. O RealtimeService usa
+     * para nao tentar assinar o canal sem env (em testes/dev local).
+     */
+    get hasCredentials(): boolean {
+        return Boolean(process.env.SUPABASE_URL && process.env.SERVICE_ROLE)
+    }
+
     // Cliente criado sob demanda: o app sobe (e os testes constroem o
     // modulo) mesmo sem env de Supabase, falhando so quando algo de fato
     // precisa autenticar.

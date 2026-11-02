@@ -5,9 +5,10 @@ import { AgoraController } from './agora/agora.controller'
 import { SessionModule } from './session/session.module'
 import { SupabaseModule } from './supabase/supabase.module'
 import { SocketsModule } from './sockets/sockets.module'
+import { RealtimeModule } from './realtime/realtime.module'
 
 @Module({
-    imports: [SupabaseModule, SessionModule, SocketsModule],
+    imports: [SupabaseModule, SessionModule, SocketsModule, RealtimeModule],
     controllers: [HealthController, PlayersController, AgoraController],
 })
 export class AppModule {}

@@ -142,6 +142,21 @@ export class GameGateway implements OnGatewayInit {
         this.sessions.logOutPlayer(uid)
     }
 
+    /**
+     * Encerra a sessao do realm e desliga todo mundo que estava nela.
+     * Espelho de `kickSessionPlayers` em apps/api/src/index.ts — chamado pelo
+     * RealtimeService quando o dono muda o mapa/link/visibilidade ou apaga o
+     * realm. (La fora de session.ts no Express para nao criar ciclo de import;
+     * aqui e um metodo do gateway, que ja e dono do `server`.)
+     */
+    kickSessionPlayers(realmId: string, reason: string): void {
+        const players = this.sessions.terminateSession(realmId)
+        for (const player of players) {
+            this.server.sockets.sockets.get(player.socketId)?.leave(realmId)
+            this.server.to(player.socketId).emit('kicked', reason)
+        }
+    }
+
     // ---------------------------------------------------------------- eventos
 
     @SubscribeMessage('joinRealm')
