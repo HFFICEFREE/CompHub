@@ -9,7 +9,10 @@ export default function routes(): Router {
     const router = Router()
 
     router.get('/openapi.json', (req, res) => {
-        const specPath = path.join(__dirname, '..', '..', 'openapi.json')
+        // O spec vive na raiz do monorepo para ser servido identico pelo
+        // backend Express e pelo NestJS. Daqui (src/routes em dev ou
+        // dist/routes apos o build) sao quatro niveis ate a raiz.
+        const specPath = path.resolve(__dirname, '..', '..', '..', '..', 'openapi.json')
         res.sendFile(specPath)
     })
 

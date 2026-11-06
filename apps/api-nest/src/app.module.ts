@@ -6,9 +6,10 @@ import { SessionModule } from './session/session.module'
 import { SupabaseModule } from './supabase/supabase.module'
 import { SocketsModule } from './sockets/sockets.module'
 import { RealtimeModule } from './realtime/realtime.module'
+import { DocsModule } from './docs/docs.module'
 
 @Module({
-    imports: [SupabaseModule, SessionModule, SocketsModule, RealtimeModule],
+    imports: [SupabaseModule, SessionModule, SocketsModule, RealtimeModule, DocsModule],
     controllers: [HealthController, PlayersController, AgoraController],
 })
 export class AppModule {}
