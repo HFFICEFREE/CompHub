@@ -1,10 +1,15 @@
-import { DM_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
 import "./globals.css";
 import Layout from '@/components/Layout/Layout'
 
-const dmSans = DM_Sans({
-    subsets: ['latin'],
-    weight: ['400', '500', '600', '700'],
+// DM Sans empacotada no repositorio (variavel, subset latin): o build nao
+// depende mais de fonts.googleapis.com, que falhava/travava a CI de forma
+// intermitente. Fonte e licenca (OFL-1.1) em src/app/fonts/.
+const dmSans = localFont({
+    src: './fonts/DMSans-Variable.woff2',
+    weight: '400 700',
+    style: 'normal',
+    display: 'swap',
 })
 
 const defaultUrl = process.env.VERCEL_URL
