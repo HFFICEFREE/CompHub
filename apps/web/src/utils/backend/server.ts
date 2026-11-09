@@ -13,7 +13,13 @@ class Server {
     public socket: Socket = {} as Socket
     private connected: boolean = false
 
-    public async connect(realmId: string, uid: string, shareId: string, access_token: string) {
+    public async connect(
+        realmId: string,
+        uid: string,
+        shareId: string,
+        access_token: string,
+        offlineData?: { mapData: unknown; skin: string },
+    ) {
         this.socket = io(backend_url, {
         reconnection: true,
         autoConnect: false,
@@ -37,10 +43,15 @@ class Server {
             this.socket.on('connect', () => {
                 this.connected = true
 
-                this.socket.emit('joinRealm', {
-                    realmId,
-                    shareId
-                })
+                // No offline o backend nao consulta Supabase: o mapa/skin vao
+                // junto no join. Em producao o payload continua identico.
+                const joinPayload: Record<string, unknown> = { realmId, shareId }
+                if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true' && offlineData) {
+                    joinPayload.mapData = offlineData.mapData
+                    joinPayload.skin = offlineData.skin
+                }
+
+                this.socket.emit('joinRealm', joinPayload)
             })
 
             this.socket.on('joinedRealm', () => {

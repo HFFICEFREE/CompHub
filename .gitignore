@@ -27,6 +27,9 @@ yarn-error.log*
 .env*.local
 .env
 
+# offline mode data (dev local)
+.offline/
+
 # vercel
 .vercel
 

@@ -1,8 +1,12 @@
 'use server'
 import { RtcRole, RtcTokenBuilder } from 'agora-token'
 import { createClient } from '../supabase/server'
+import { isOfflineMode } from '../offline/config'
 
 export async function generateToken() {
+    // No modo offline nao existe Agora: evita tentar conectar com app id fake.
+    if (isOfflineMode()) return null
+
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return null

@@ -1,9 +1,4 @@
-import React, { createContext, useContext, ReactNode, useEffect, useState, useMemo, useRef } from 'react'
-import AgoraRTC, { 
-    AgoraRTCProvider, 
-} from 'agora-rtc-react'
-import { IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng'
-import signal from '../../utils/signal'
+import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react'
 import { videoChat } from '../../utils/video-chat/video-chat'
 
 interface VideoChatContextType {
@@ -24,19 +19,14 @@ interface VideoChatProviderProps {
   children: ReactNode
 }
 
+// O provider antigo criava um client Agora no render. O SDK acessa `window`
+// no import, o que quebrava o SSR de /play; o client agora e criado sob
+// demanda dentro de utils/video-chat/video-chat.ts, so quando usado.
 export const AgoraVideoChatProvider: React.FC<AgoraVideoChatProviderProps> = ({ children }) => {
-    const client = useMemo(() => {
-        const newClient = AgoraRTC.createClient({ codec: "vp8", mode: "rtc" })
-        AgoraRTC.setLogLevel(4)
-        return newClient
-    }, [])
-
     return (
-        <AgoraRTCProvider client={client}>
-            <VideoChatProvider>
-                {children}
-            </VideoChatProvider>
-        </AgoraRTCProvider>
+        <VideoChatProvider>
+            {children}
+        </VideoChatProvider>
     )
 }
 

@@ -1,9 +1,42 @@
-import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IAgoraRTCRemoteUser, IDataChannelConfig } from 'agora-rtc-sdk-ng'
+import type {
+    IAgoraRTCClient,
+    ICameraVideoTrack,
+    IMicrophoneAudioTrack,
+    IAgoraRTCRemoteUser,
+    IDataChannelConfig,
+} from 'agora-rtc-sdk-ng'
 import signal from '../signal'
 import { generateToken } from './generateToken'
 
+// No offline o Agora nao existe; os botoes de mic/camera viram no-ops para
+// nao abrir dispositivos nem tentar conectar com credenciais dummy.
+const OFFLINE_MODE = process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true'
+
+// O SDK do Agora acessa `window` no proprio import. Carregando sob demanda
+// (e so no browser), o SSR de /play deixa de quebrar com "window is not
+// defined" — o chunk do Agora nem e baixado no modo offline.
+type AgoraSdk = {
+    createClient: (config: { codec: string; mode: string }) => IAgoraRTCClient
+    createCameraVideoTrack: () => Promise<ICameraVideoTrack>
+    createMicrophoneAudioTrack: () => Promise<IMicrophoneAudioTrack>
+    setLogLevel: (level: number) => void
+}
+
+let agoraSdk: Promise<AgoraSdk> | null = null
+
+function loadAgora(): Promise<AgoraSdk> {
+    if (!agoraSdk) {
+        agoraSdk = import('agora-rtc-sdk-ng').then((mod) => {
+            const sdk = (mod as unknown as { default?: AgoraSdk }).default ?? (mod as unknown as AgoraSdk)
+            return sdk
+        })
+    }
+
+    return agoraSdk
+}
+
 export class VideoChat {
-    private client: IAgoraRTCClient = AgoraRTC.createClient({ codec: "vp8", mode: "rtc" })
+    private client: IAgoraRTCClient | null = null
     private microphoneTrack: IMicrophoneAudioTrack | null = null
     private cameraTrack: ICameraVideoTrack | null = null
     private currentChannel: string = ''
@@ -12,13 +45,21 @@ export class VideoChat {
 
     private channelTimeout: NodeJS.Timeout | null = null
 
-    constructor() {
+    private async getClient(): Promise<IAgoraRTCClient> {
+        if (this.client) return this.client
+
+        const AgoraRTC = await loadAgora()
         AgoraRTC.setLogLevel(4)
-        this.client.on('user-published', this.onUserPublished)
-        this.client.on('user-unpublished', this.onUserUnpublished)
-        this.client.on('user-left', this.onUserLeft)
-        this.client.on('user-info-updated', this.onUserInfoUpdated)
-        this.client.on('user-joined', this.onUserJoined)
+
+        const client = AgoraRTC.createClient({ codec: 'vp8', mode: 'rtc' })
+        client.on('user-published', this.onUserPublished)
+        client.on('user-unpublished', this.onUserUnpublished)
+        client.on('user-left', this.onUserLeft)
+        client.on('user-info-updated', this.onUserInfoUpdated)
+        client.on('user-joined', this.onUserJoined)
+
+        this.client = client
+        return client
     }
 
     private onUserInfoUpdated = (uid: string) => {
@@ -33,7 +74,9 @@ export class VideoChat {
 
     public onUserPublished = async (user: IAgoraRTCRemoteUser, mediaType: "audio" | "video" | "datachannel", config?: IDataChannelConfig) => {
         this.remoteUsers[user.uid] = user
-        await this.client.subscribe(user, mediaType)
+        if (this.client) {
+            await this.client.subscribe(user, mediaType)
+        }
 
         if (mediaType === 'audio') {
             user.audioTrack?.play()
@@ -56,20 +99,25 @@ export class VideoChat {
     }
 
     public async toggleCamera() {
+        if (OFFLINE_MODE) return true
+
+        const AgoraRTC = await loadAgora()
+        const client = await this.getClient()
+
         if (!this.cameraTrack) {
             this.cameraTrack = await AgoraRTC.createCameraVideoTrack()
             this.cameraTrack.play('local-video')
 
-            if (this.client.connectionState === 'CONNECTED') {
-                await this.client.publish([this.cameraTrack])
+            if (client.connectionState === 'CONNECTED') {
+                await client.publish([this.cameraTrack])
             }
 
             return false
         }
         await this.cameraTrack.setEnabled(!this.cameraTrack.enabled)
 
-        if (this.client.connectionState === 'CONNECTED' && this.cameraTrack.enabled) {
-            await this.client.publish([this.cameraTrack])
+        if (client.connectionState === 'CONNECTED' && this.cameraTrack.enabled) {
+            await client.publish([this.cameraTrack])
         }
 
         return !this.cameraTrack.enabled
@@ -78,11 +126,16 @@ export class VideoChat {
     // TODO: Set it up so microphone gets muted and unmuted instead of enabled and disabled
 
     public async toggleMicrophone() {
+        if (OFFLINE_MODE) return true
+
+        const AgoraRTC = await loadAgora()
+        const client = await this.getClient()
+
         if (!this.microphoneTrack) {
             this.microphoneTrack = await AgoraRTC.createMicrophoneAudioTrack()
 
-            if (this.client.connectionState === 'CONNECTED') {
-                await this.client.publish([this.microphoneTrack])
+            if (client.connectionState === 'CONNECTED') {
+                await client.publish([this.microphoneTrack])
             }
 
             return false
@@ -104,6 +157,8 @@ export class VideoChat {
     }
 
     public async joinChannel(channel: string, uid: string) {
+        if (OFFLINE_MODE) return
+
         if (this.channelTimeout) {
             clearTimeout(this.channelTimeout)
         }
@@ -114,24 +169,28 @@ export class VideoChat {
             if (!credentials) return
             const { token, channelName } = credentials
 
-            if (this.client.connectionState === 'CONNECTED') {
-                await this.client.leave()
+            const client = await this.getClient()
+
+            if (client.connectionState === 'CONNECTED') {
+                await client.leave()
             }
             this.resetRemoteUsers()
 
-            await this.client.join(process.env.NEXT_PUBLIC_AGORA_APP_ID!, channelName, token, uid)
+            await client.join(process.env.NEXT_PUBLIC_AGORA_APP_ID!, channelName, token, uid)
             this.currentChannel = channel
 
             if (this.microphoneTrack && this.microphoneTrack.enabled) {
-                await this.client.publish([this.microphoneTrack])
+                await client.publish([this.microphoneTrack])
             }
             if (this.cameraTrack && this.cameraTrack.enabled) {
-                await this.client.publish([this.cameraTrack])
+                await client.publish([this.cameraTrack])
             }
         }, 1000)
     }
 
     public async leaveChannel() {
+        if (OFFLINE_MODE) return
+
         if (this.channelTimeout) {
             clearTimeout(this.channelTimeout)
         }
@@ -139,7 +198,7 @@ export class VideoChat {
         this.channelTimeout = setTimeout(async () => {
             if (this.currentChannel === '') return
 
-            if (this.client.connectionState === 'CONNECTED') {
+            if (this.client?.connectionState === 'CONNECTED') {
                 await this.client.leave()
                 this.currentChannel = ''
             }

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng'
+import type { IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng'
 import signal from '@/utils/signal'
 import { MicrophoneSlash } from '@phosphor-icons/react'
 import AnimatedCharacter from '@/app/play/SkinMenu/AnimatedCharacter'

@@ -8,6 +8,11 @@ import { z } from 'zod'
 export const JoinRealm = z.object({
     realmId: z.string(),
     shareId: z.string(),
+    // Usados apenas no modo offline (dev local sem Supabase): o cliente envia
+    // o mapa e o skin que ja carregou localmente. Os backends ignoram estes
+    // campos quando OFFLINE_MODE nao esta ativo.
+    mapData: z.unknown().optional(),
+    skin: z.string().optional(),
 })
 
 export const MovePlayer = z.object({

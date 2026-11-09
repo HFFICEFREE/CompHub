@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter @comphub/core build && pnpm --parallel -r dev",
+    "dev:offline": "node scripts/dev-offline.mjs",
     "build": "pnpm -r build",
     "typecheck": "pnpm --filter @comphub/core build && pnpm -r typecheck",
     "lint": "pnpm -r lint",

@@ -18,12 +18,15 @@ import {
     RateLimiter,
     SessionManager,
     Teleport,
+    defaultSkin,
     formatEmailToName,
     removeExtraSpaces,
+    type RealmData,
 } from '@comphub/core'
 import { SupabaseService } from '../supabase/supabase.service'
 import { getAllowedOrigins } from '../config/origins'
 import { getTokenExpirationMs } from '../auth/token-expiry'
+import { isOfflineMode, isRealmData, offlineUserFromToken } from '../offline/offline'
 import { WsErrorFilter } from './ws-error.filter'
 
 // Todos os handlers retornam void de proposito: no Nest o valor de retorno
@@ -62,6 +65,17 @@ export class GameGateway implements OnGatewayInit {
 
             if (!access_token || !uid) {
                 return next(new Error('Invalid access token or uid.'))
+            }
+
+            // Dev local sem Supabase: token = uid. Vale antes do caminho normal
+            // para nunca construir o cliente Supabase neste modo.
+            const offlineUser = offlineUserFromToken(access_token)
+            if (offlineUser) {
+                if (offlineUser.id !== uid) {
+                    return next(new Error('Invalid uid.'))
+                }
+                socket.data.user = offlineUser
+                return next()
             }
 
             const { data: user, error } = await this.supabase.client.auth.getUser(access_token)
@@ -188,6 +202,43 @@ export class GameGateway implements OnGatewayInit {
                 return
             }
 
+            const join = (mapData: RealmData, skin: string): void => {
+                if (!this.sessions.getSession(realmData.realmId)) {
+                    this.sessions.createSession(realmData.realmId, mapData)
+                }
+
+                if (this.sessions.getPlayerSession(uid)) {
+                    this.kickFromSession(uid, 'You have logged in from another location.')
+                }
+
+                const user = this.userOf(socket)
+                const username = formatEmailToName(user.user_metadata.email)
+
+                if (!this.sessions.addPlayerToSession(socket.id, realmData.realmId, uid, username, skin)) {
+                    rejectJoin('Failed to join the space.')
+                    return
+                }
+
+                const newSession = this.sessions.getPlayerSession(uid)
+                const player = newSession.getPlayer(uid)
+
+                socket.join(realmData.realmId)
+                socket.emit('joinedRealm')
+                this.emitToOthersInRoom(socket, 'playerJoinedRoom', player)
+            }
+
+            // Offline: sem Supabase, o cliente manda o mapa/skin ja carregados
+            // localmente. Qualquer um entra em qualquer realm (sandbox local).
+            if (isOfflineMode()) {
+                if (!isRealmData(realmData.mapData)) {
+                    rejectJoin('Invalid map data.')
+                    return
+                }
+
+                join(realmData.mapData, realmData.skin ?? defaultSkin)
+                return
+            }
+
             const { data, error } = await this.supabase.client
                 .from('realms')
                 .select('owner_id, share_id, map_data, only_owner')
@@ -210,34 +261,9 @@ export class GameGateway implements OnGatewayInit {
                 return
             }
 
-            const join = (): void => {
-                if (!this.sessions.getSession(realmData.realmId)) {
-                    this.sessions.createSession(realmData.realmId, data.map_data)
-                }
-
-                if (this.sessions.getPlayerSession(uid)) {
-                    this.kickFromSession(uid, 'You have logged in from another location.')
-                }
-
-                const user = this.userOf(socket)
-                const username = formatEmailToName(user.user_metadata.email)
-
-                if (!this.sessions.addPlayerToSession(socket.id, realmData.realmId, uid, username, profile.skin)) {
-                    rejectJoin('Failed to join the space.')
-                    return
-                }
-
-                const newSession = this.sessions.getPlayerSession(uid)
-                const player = newSession.getPlayer(uid)
-
-                socket.join(realmData.realmId)
-                socket.emit('joinedRealm')
-                this.emitToOthersInRoom(socket, 'playerJoinedRoom', player)
-            }
-
             // Autorizacao: dono sempre entra; senao, precisa de link valido
             if (data.owner_id === uid) {
-                join()
+                join(data.map_data, profile.skin)
                 return
             }
 
@@ -247,7 +273,7 @@ export class GameGateway implements OnGatewayInit {
             }
 
             if (data.share_id === realmData.shareId) {
-                join()
+                join(data.map_data, profile.skin)
             } else {
                 rejectJoin('The share link has been changed.')
             }
