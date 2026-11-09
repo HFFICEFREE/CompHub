@@ -1,7 +1,17 @@
-import { type NextRequest } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { updateSession } from "@/utils/supabase/middleware"
+import { isOfflineMode } from "@/utils/offline/config"
 
 export async function middleware(request: NextRequest) {
+  // Sem Supabase nao ha sessao para renovar; deixa o cookie offline intacto.
+  if (isOfflineMode()) {
+    return NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
+  }
+
   return await updateSession(request);
 }
 

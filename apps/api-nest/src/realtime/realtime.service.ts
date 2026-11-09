@@ -7,6 +7,7 @@ import type {
 import type { RealmData } from '@comphub/core'
 import { SupabaseService } from '../supabase/supabase.service'
 import { GameGateway } from '../sockets/game.gateway'
+import { isOfflineMode } from '../offline/offline'
 
 export type RealmRow = {
     id: string
@@ -37,6 +38,11 @@ export class RealtimeService implements OnApplicationBootstrap, OnModuleDestroy 
         // Sem credenciais nao ha o que assinar. Mantemos o app no ar (mesma
         // filosofia do SupabaseService lazy) e avisamos no log — nos testes e
         // em dev local sem env e este caminho.
+        if (isOfflineMode()) {
+            this.logger.log('Modo offline ativo: realtime de realms desativado.')
+            return
+        }
+
         if (!this.supabase.hasCredentials) {
             this.logger.warn(
                 'SUPABASE_URL/SERVICE_ROLE ausentes: inscricao no realtime de realms nao iniciada.',

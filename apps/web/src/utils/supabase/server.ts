@@ -1,8 +1,14 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { isOfflineMode } from "@/utils/offline/config";
+import { createOfflineServerClient } from "@/utils/offline/server-client";
 
 export const createClient = () => {
+  if (isOfflineMode()) {
+    return createOfflineServerClient();
+  }
+
   const cookieStore = cookies();
 
   return createServerClient(
@@ -36,8 +42,12 @@ export const createClient = () => {
   );
 };
 
-export const createUserClient = (accessToken: string) =>
-  createSupabaseClient(
+export const createUserClient = (accessToken: string) => {
+  if (isOfflineMode()) {
+    return createOfflineServerClient(accessToken);
+  }
+
+  return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -52,3 +62,4 @@ export const createUserClient = (accessToken: string) =>
       },
     },
   );
+};

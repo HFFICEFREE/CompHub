@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { isOfflineMode } from '../offline/offline'
 
 @Injectable()
 export class SupabaseService {
@@ -10,7 +11,9 @@ export class SupabaseService {
      * para nao tentar assinar o canal sem env (em testes/dev local).
      */
     get hasCredentials(): boolean {
-        return Boolean(process.env.SUPABASE_URL && process.env.SERVICE_ROLE)
+        // No modo offline nao queremos realtime nem cliente Supabase, mesmo
+        // que as envs estejam preenchidas (ex.: .env de smoke test).
+        return !isOfflineMode() && Boolean(process.env.SUPABASE_URL && process.env.SERVICE_ROLE)
     }
 
     // Cliente criado sob demanda: o app sobe (e os testes constroem o

@@ -28,7 +28,10 @@ const PixiApp:React.FC<PixiAppProps> = ({ className, mapData, username, access_t
             appRef.current = app
             setModal('Loading')
             setLoadingText('Connecting to server...')
-            const { success, errorMessage } = await server.connect(realmId, uid, shareId, access_token)
+            const { success, errorMessage } = await server.connect(realmId, uid, shareId, access_token, {
+                mapData,
+                skin: initialSkin,
+            })
             if (!success) {
                 setErrorModal('Failed To Connect')
                 setFailedConnectionMessage(errorMessage)

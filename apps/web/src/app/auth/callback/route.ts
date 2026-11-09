@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
+import { isOfflineMode } from "@/utils/offline/config";
 
 export async function GET(request: Request) {
   // The `/auth/callback` route is required for the server-side auth flow implemented
@@ -8,6 +9,11 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const origin = requestUrl.origin;
+
+  // No offline nao existe OAuth: o cookie e criado na tela de signin.
+  if (isOfflineMode()) {
+    return NextResponse.redirect(`${origin}/app`);
+  }
 
   if (code) {
     const supabase = createClient();

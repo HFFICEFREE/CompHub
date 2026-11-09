@@ -126,6 +126,22 @@ Sem essa configuração, o payload de `UPDATE` pode não conter `old` completo e
 
 Por fim, na raiz do projeto execute `pnpm dev` (sobe frontend e backend em paralelo). Para rodar cada um separadamente: `pnpm --filter @comphub/web dev` ou `pnpm --filter @comphub/api dev`.
 
+### Modo offline (sem Supabase)
+
+Para rodar e testar localmente sem conectar no Supabase:
+
+```bash
+pnpm dev:offline
+```
+
+- Sobe apenas o web (`:3000`) e o backend Nest (`:3001`). O Express não sobe porque os dois usam a mesma porta — de quebra, o offline exercita o runtime do cutover da Fase 2.
+- Na tela de login, clique em **Enter offline workspace**. O primeiro acesso cria uma identidade local por navegador (dois navegadores = dois jogadores).
+- Cada identidade ganha um **My Space** com o mapa inicial. Criar/editar/gerenciar realms, skins, chat, teleporte e links compartilhados funcionam normalmente.
+- Os dados ficam em `.offline/data.json` (ignorado pelo git). Apague a pasta para resetar o mundo local.
+- Áudio/vídeo (Agora) fica desligado no offline.
+- `OFFLINE_MODE`/`NEXT_PUBLIC_OFFLINE_MODE` são ignorados quando `NODE_ENV=production` (proteção contra bypass de auth). Para permitir em produção — não recomendado — defina `ALLOW_OFFLINE_IN_PRODUCTION=true` e `NEXT_PUBLIC_ALLOW_OFFLINE_IN_PRODUCTION=true`.
+- O script já define `OFFLINE_MODE=true`, `NEXT_PUBLIC_OFFLINE_MODE=true` e as URLs locais. Para subir manualmente, use essas mesmas variáveis nos dois processos.
+
 ### Funcionalidades Principais
 
 #### Editor de Mapas
@@ -185,6 +201,7 @@ CompHub/
 |---|---|
 | `pnpm install` | Instala dependências de todos os workspaces |
 | `pnpm dev` | Sobe web + api + api-nest em paralelo (compila o core antes) |
+| `pnpm dev:offline` | Sobe web + api-nest sem Supabase (dados em `.offline/data.json`) |
 | `pnpm build` | Build de produção de todos os workspaces |
 | `pnpm typecheck` | Verificação de tipos em todos os workspaces |
 | `pnpm test` | Testes Jest (api) |
