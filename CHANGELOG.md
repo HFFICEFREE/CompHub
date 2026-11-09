@@ -5,6 +5,42 @@ Todas as mudanças notáveis neste projeto são documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e este projeto adota [Semver](https://semver.org/lang/pt-BR/).
 
+## [1.2.0] - 2026-11-09
+
+Fase 2 concluída em código: backend NestJS convivendo com o Express, domínio
+compartilhado em `@comphub/core` e modo offline local para desenvolvimento.
+
+### Adicionado
+
+- **Backend NestJS 11** (`apps/api-nest`), rodando ao lado do Express na migração strangler: rotas HTTP (`/getPlayersInRoom`, `/getPlayerCounts`, `/agoraChannel`), sockets (`GameGateway`), realtime de realms e `/docs`/`/openapi.json` servidos a partir do mesmo spec da raiz.
+- **`@comphub/core`**: domínio puro compartilhado (sessão/proximidade, pathfinding, rate limit e schemas de socket) consumido pelos dois backends, para o protocolo e as regras não divergirem durante a migração.
+- **Modo offline local** (`pnpm dev:offline`): roda web + api-nest sem Supabase, com login local por navegador, realms persistidos em `.offline/data.json`, CRUD, jogo, chat, skin e teleporte. Áudio/vídeo fica desligado e o modo nunca ativa em produção sem opt-in explícito.
+- **Testes**: suíte do domínio no core e testes de integração do Nest (HTTP via supertest e sockets via socket.io-client), totalizando 96 testes (`pnpm test`).
+- CI passa a rodar `typecheck`, `lint`, `test` e `build` em todo PR.
+
+### Alterado
+
+- `openapi.json` movido para a raiz do monorepo: Express e Nest servem o mesmo contrato.
+- Agora SDK carregado apenas no browser (import dinâmico): corrige o SSR de `/play` (`window is not defined`) e evita baixar o chunk no offline.
+- Realtime do Nest usa o ciclo de vida do framework (`onApplicationBootstrap`/`onModuleDestroy`), com unsubscribe no shutdown; sem credenciais não assina.
+
+### Corrigido
+
+- Token expirado agora desconecta o socket.
+- CORS exige `FRONTEND_URL` e usa allowlist de origens.
+- Movimento valida adjacência e caminhabilidade além do BFS; índice de posições ignora coordenadas vazias.
+- Handlers de socket protegidos contra sessão inexistente e usuário limpo em qualquer desconexão.
+- Update de realm sem `payload.old` e kick desnecessário ao atualizar realms privados.
+- `getPlayersInRoom` serializa DTO público (sem `socketId`/`proximityId`/`room`).
+- Front: ticker destruído e socket obsoleto ao sair do jogo, listeners do editor e cliente do usuário nas server actions.
+- Canal de voz derivado no servidor (`GET /agoraChannel`), sem confiar no cliente.
+- Build do web não depende mais de `fonts.googleapis.com`: DM Sans empacotada localmente (OFL-1.1), eliminando falhas/travamentos intermitentes da CI.
+
+### Notas
+
+- **Cutover de produção ainda não ativado**: o Express continua sendo o processo web no Heroku. O PR #56 deixa a troca preparada (draft) e o rollback documentado no README.
+- **PRs incluídos**: #34–#49 (correções e documentação), #50–#55 (Fase 2), #57 (modo offline) e #59 (DM Sans local).
+
 ## [1.1.0] - 2026-10-26
 
 Fase 1 concluída: o servidor deixa de confiar no cliente. Validação de
@@ -72,5 +108,6 @@ Primeira release oficial do CompHub — monorepo validado com `typecheck` e `bui
 - **83 personagens** com sistema de skins e animações.
 - **Salas e teleporte**, movimentação baseada em tiles e autenticação com Supabase Auth.
 
+[1.2.0]: https://github.com/HFFICEFREE/CompHub/releases/tag/v1.2.0
 [1.1.0]: https://github.com/HFFICEFREE/CompHub/releases/tag/v1.1.0
 [1.0.0]: https://github.com/HFFICEFREE/CompHub/releases/tag/v1.0.0
