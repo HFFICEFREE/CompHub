@@ -87,7 +87,9 @@ try {
 
     for (const child of children) {
         child.on('exit', (code) => {
-            if (!shuttingDown && code !== 0) shutdown(code ?? 1)
+            // Qualquer um dos dois caindo derruba o conjunto: evita deixar
+            // um servidor orfao segurando a porta depois de um crash.
+            if (!shuttingDown) shutdown(code ?? 1)
         })
     }
 } catch (error) {
