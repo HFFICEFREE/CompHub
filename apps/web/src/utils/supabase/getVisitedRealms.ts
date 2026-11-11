@@ -3,7 +3,7 @@ import 'server-only'
 import { createUserClient } from './server'
 
 export async function getVisitedRealms(access_token: string) {
-    const supabase = createUserClient(access_token)
+    const supabase = await createUserClient(access_token)
 
     const { data: user, error: userError } = await supabase.auth.getUser(access_token)
     if (!user || !user.user) {

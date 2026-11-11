@@ -3,7 +3,7 @@ import 'server-only'
 import { createUserClient } from './server'
 
 export async function getPlayRealmData(accessToken: string, shareId: string) {
-    const supabase = createUserClient(accessToken)
+    const supabase = await createUserClient(accessToken)
 
     const { data: user, error: userError } = await supabase.auth.getUser(accessToken)
 

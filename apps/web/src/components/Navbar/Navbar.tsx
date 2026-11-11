@@ -5,7 +5,7 @@ import { formatEmailToName } from '@/utils/formatEmailToName'
 
 export const Navbar:React.FC = async () => {
 
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
 

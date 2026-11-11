@@ -42,7 +42,7 @@ export async function saveRealm(access_token: string, realmData: RealmData, id: 
         room.name = removeExtraSpaces(room.name, true)
     }
 
-    const supabase = createUserClient(access_token)
+    const supabase = await createUserClient(access_token)
 
     const { data: user, error: userError } = await supabase.auth.getUser(access_token)
     if (!user || !user.user) {

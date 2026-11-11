@@ -1,40 +1,33 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { isOfflineMode } from "@/utils/offline/config";
 import { createOfflineServerClient } from "@/utils/offline/server-client";
 
-export const createClient = () => {
+export const createClient = async () => {
   if (isOfflineMode()) {
     return createOfflineServerClient();
   }
 
-  const cookieStore = cookies();
+  // No Next 15 `cookies()` e assincrono.
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name: string, value: string, options: CookieOptions) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options });
-          } catch (error) {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: "", ...options });
-          } catch (error) {
-            // The `delete` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // `setAll` foi chamado de um Server Component. Pode ser ignorado
+            // se houver middleware renovando a sessao.
           }
         },
       },
@@ -42,7 +35,7 @@ export const createClient = () => {
   );
 };
 
-export const createUserClient = (accessToken: string) => {
+export const createUserClient = async (accessToken: string) => {
   if (isOfflineMode()) {
     return createOfflineServerClient(accessToken);
   }
