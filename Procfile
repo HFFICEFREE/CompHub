@@ -1,1 +1,1 @@
-web: pnpm --filter @comphub/api start
+web: pnpm --filter @comphub/api-nest start

@@ -103,6 +103,10 @@ SERVICE_ROLE=
 ```
 
 > **Deploy (Heroku)**: a config var `FRONTEND_URL` é obrigatória — ex.: `https://seu-frontend.com`.
+>
+> O runtime de produção é o `@comphub/api-nest` (definido no `Procfile`). Para reverter
+> para o backend Express antigo, troque o `Procfile` para `web: pnpm --filter @comphub/api start`
+> e o `heroku-postbuild` para buildar `@comphub/api`.
 
 Crie um arquivo `.env.local` na pasta `apps/web` com as seguintes variáveis:
 ```
@@ -179,9 +183,9 @@ CompHub/
 │  │  ├─ src/app/        # Páginas e rotas
 │  │  ├─ src/components/ # Componentes reutilizáveis
 │  │  └─ src/utils/      # Utilitários e helpers
-│  ├─ api/               # Servidor Express + Socket.io (produção)
+│  ├─ api/               # Servidor Express + Socket.io (legado, mantido até o cutover)
 │  │  └─ src/            # Rotas, sockets, auth e bootstrap
-│  └─ api-nest/          # Backend NestJS (migração em curso, ver Fase 2)
+│  └─ api-nest/          # Backend NestJS (runtime de produção)
 │     └─ src/            # Bootstrap, controllers e config
 ├─ packages/
 │  └─ core/              # Domínio puro compartilhado: sessões, pathfinding,
@@ -218,7 +222,7 @@ CompHub/
 ### Tecnologias Utilizadas
 
 - **Frontend**: Next.js, React, TypeScript, TailwindCSS, Pixi.js
-- **Backend**: Node.js, Express.js, Socket.io (produção) · NestJS (migração da Fase 2)
+- **Backend**: Node.js, NestJS + Socket.io (produção) · Express (legado, ver Fase 2)
 - **Domínio compartilhado**: `@comphub/core` (TypeScript puro, sem framework)
 - **Banco de Dados**: Supabase (PostgreSQL)
 - **Chat de Vídeo**: Agora
