@@ -4,7 +4,7 @@ import { createUserClient } from './server'
 import revalidate from '../revalidate'
 
 export async function updateVisitedRealms(accessToken: string, shareId: string) {
-    const supabase = createUserClient(accessToken)
+    const supabase = await createUserClient(accessToken)
 
     // get user data
     const { data: user, error: userError } = await supabase.auth.getUser(accessToken)

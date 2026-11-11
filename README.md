@@ -225,3 +225,29 @@ CompHub/
 - **Gerenciamento de Estado**: React Hooks, Signals
 - **Autenticação**: Supabase Auth
 - **Deploy**: Heroku (backend), Vercel (frontend)
+
+### Dependências e overrides
+
+As dependências são atualizadas por PR (`chore(deps): ...`), sempre com
+`typecheck`, `lint`, `test` e `build` verdes. Majors são avaliados em PRs
+próprios porque mudam runtime ou configuração:
+
+- **Nest 12 / uuid 12+**: ESM-only. `apps/api` e `apps/api-nest` compilam para
+  CommonJS (Jest/ts-jest/ts-node), por isso Nest 11 e uuid 11.
+- **Next 16 / Tailwind 4 / ESLint 9+**: exigem migração de configuração
+  (`next lint` removido, config CSS-first do Tailwind, flat config do ESLint).
+- **Jest 30 / Express 5 / TypeScript 6+ / dotenv 18**: majors recentes sem
+  ganho imediato; o Express é legado e o Nest já usa Express 5 internamente.
+
+Mitigações em `pnpm.overrides` (raiz):
+
+| Override | Motivo |
+|---|---|
+| `multer ^2.5.0` | `@nestjs/platform-express@11` fixa 2.4.0 (DoS corrigido em 2.5.0). |
+| `next>postcss ^8.5.32` | O Next fixa postcss 8.4.31, com advisories de path traversal/XSS. |
+| `@nestjs/cli>glob ^14.0.4` | O CLI fixa glob 13; 14.0.2+ corrige o advisory (apenas dev). |
+| `@typescript-eslint/typescript-estree>minimatch ^11.0.8` | 11.0.1+ corrige DoS no matching de arquivos (apenas dev). |
+
+O único advisory restante é `deepmerge` (low), via Jest 29, sem versão corrigida
+(`patched <0.0.0`). Ele só afeta o merge de configuração do Jest em
+desenvolvimento e deve sumir quando o Jest 30 for adotado.

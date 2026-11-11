@@ -19,6 +19,14 @@
     "heroku-postbuild": "pnpm --filter @comphub/core build && pnpm --filter @comphub/api build"
   },
   "devDependencies": {
-    "prettier": "^3.3.3"
+    "prettier": "^3.9.10"
+  },
+  "pnpm": {
+    "overrides": {
+      "multer": "^2.5.0",
+      "next>postcss": "^8.5.32",
+      "@nestjs/cli>glob": "^14.0.4",
+      "@typescript-eslint/typescript-estree>minimatch": "^11.0.8"
+    }
   }
 }

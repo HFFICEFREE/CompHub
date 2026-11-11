@@ -6,7 +6,7 @@ import { getVisitedRealms } from '@/utils/supabase/getVisitedRealms'
 
 export default async function App() {
 
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
     const { data: { session } } = await supabase.auth.getSession()

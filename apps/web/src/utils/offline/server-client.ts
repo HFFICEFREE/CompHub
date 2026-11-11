@@ -14,10 +14,11 @@ import { ensureOfflineUser, executeOfflineQuery } from './store'
  * `uidOverride` e o access_token dos server actions (no offline, o proprio
  * uid); sem ele, o usuario vem do cookie definido na tela de signin.
  */
-export function createOfflineServerClient(uidOverride?: string | null): SupabaseClient {
+export async function createOfflineServerClient(uidOverride?: string | null): Promise<SupabaseClient> {
+    // No Next 15 `cookies()` e assincrono.
     const uid =
         uidOverride === undefined
-            ? cookies().get(OFFLINE_UID_COOKIE)?.value ?? null
+            ? (await cookies()).get(OFFLINE_UID_COOKIE)?.value ?? null
             : offlineUidFromToken(uidOverride)
 
     const user = uid ? makeOfflineUser(uid) : null
