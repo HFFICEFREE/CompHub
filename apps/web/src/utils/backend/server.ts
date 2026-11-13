@@ -11,7 +11,7 @@ const backend_url: string = process.env.NEXT_PUBLIC_BACKEND_URL as string
 
 class Server {
     public socket: Socket = {} as Socket
-    private connected: boolean = false
+    private pendingResolve: ((response: ConnectionResponse) => void) | null = null
 
     public async connect(
         realmId: string,
@@ -20,7 +20,11 @@ class Server {
         access_token: string,
         offlineData?: { mapData: unknown; skin: string },
     ) {
-        this.socket = io(backend_url, {
+        // Encerra qualquer conexao anterior (ex.: StrictMode remontando o
+        // efeito) antes de criar a nova.
+        this.disconnect()
+
+        const socket = io(backend_url, {
         reconnection: true,
         autoConnect: false,
         reconnectionAttempts: 5,
@@ -36,12 +40,24 @@ class Server {
             uid
         }
     })
+        this.socket = socket
 
-        return new Promise<ConnectionResponse>((resolve, reject) => {
-            this.socket.connect()
+        return new Promise<ConnectionResponse>((resolve) => {
+            const finish = (response: ConnectionResponse) => {
+                if (this.pendingResolve !== finish) return
+                this.pendingResolve = null
+                resolve(response)
+            }
+            this.pendingResolve = finish
 
-            this.socket.on('connect', () => {
-                this.connected = true
+            socket.connect()
+
+            socket.on('connect', () => {
+                // Ignora conexoes antigas que ainda estavam em andamento.
+                if (this.socket !== socket) {
+                    socket.disconnect()
+                    return
+                }
 
                 // No offline o backend nao consulta Supabase: o mapa/skin vao
                 // junto no join. Em producao o payload continua identico.
@@ -51,39 +67,55 @@ class Server {
                     joinPayload.skin = offlineData.skin
                 }
 
-                this.socket.emit('joinRealm', joinPayload)
+                socket.emit('joinRealm', joinPayload)
             })
 
-            this.socket.on('joinedRealm', () => {
-                resolve({
+            socket.on('joinedRealm', () => {
+                finish({
                     success: true,
                     errorMessage: ''
                 })
             })
 
-            this.socket.on('failedToJoinRoom', (reason: string) => {
-                resolve({
+            socket.on('failedToJoinRoom', (reason: string) => {
+                finish({
                     success: false,
                     errorMessage: reason
                 })
             })
 
-            this.socket.on('connect_error', (err: any) => {
+            socket.on('connect_error', (err: any) => {
                 console.error('Connection error:', err)
-                resolve({
+                finish({
                     success: false,
                     errorMessage: err.message
+                })
+            })
+
+            socket.on('disconnect', () => {
+                finish({
+                    success: false,
+                    errorMessage: 'Disconnected from server.'
                 })
             })
         })
     }
 
     public disconnect() {
-        if (this.connected) {
-            this.socket.disconnect()
-        }
-        this.connected = false
+        const socket = this.socket
         this.socket = {} as Socket
+
+        if (typeof socket.disconnect === 'function') {
+            socket.disconnect()
+        }
+
+        // Libera um connect em andamento para nao deixar a promise pendurada.
+        if (this.pendingResolve) {
+            this.pendingResolve({
+                success: false,
+                errorMessage: 'Connection closed.'
+            })
+        }
     }
 
     public async getPlayersInRoom(roomIndex: number) {

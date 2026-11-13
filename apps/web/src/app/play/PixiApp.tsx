@@ -23,8 +23,11 @@ const PixiApp:React.FC<PixiAppProps> = ({ className, mapData, username, access_t
     const { setModal, setLoadingText, setFailedConnectionMessage, setErrorModal } = useModal()
 
     useEffect(() => {
+        let cancelled = false
+        let app: PlayApp | null = null
+
         const mount = async () => {
-            const app = new PlayApp(uid, realmId, mapData, username, initialSkin)
+            app = new PlayApp(uid, realmId, mapData, username, initialSkin)
             appRef.current = app
             setModal('Loading')
             setLoadingText('Connecting to server...')
@@ -32,6 +35,10 @@ const PixiApp:React.FC<PixiAppProps> = ({ className, mapData, username, access_t
                 mapData,
                 skin: initialSkin,
             })
+
+            // O efeito pode ter sido desmontado (StrictMode) enquanto conectava.
+            if (cancelled) return
+
             if (!success) {
                 setErrorModal('Failed To Connect')
                 setFailedConnectionMessage(errorMessage)
@@ -40,19 +47,22 @@ const PixiApp:React.FC<PixiAppProps> = ({ className, mapData, username, access_t
 
             setLoadingText('Loading game...')
             await app.init()
+
+            if (cancelled) return
+
             setModal('None')
             const pixiApp = app.getApp()
             
             document.getElementById('app-container')!.appendChild(pixiApp.canvas)
         }
 
-        if (!appRef.current) {
-            mount()
-        }
+        mount()
         
         return () => {
-            if (appRef.current) {
-                appRef.current.destroy()
+            cancelled = true
+            app?.destroy()
+            if (appRef.current === app) {
+                appRef.current = null
             }
         }
     }, [])
