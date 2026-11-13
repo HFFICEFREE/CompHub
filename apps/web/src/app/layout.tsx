@@ -18,8 +18,9 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Gather",
-  description: "This is a Gather clone.",
+  title: "CompHub — collaborative virtual spaces",
+  description:
+    "Create, customize and share collaborative virtual spaces with proximity chat, video and a built-in map editor.",
 }
 
 export default function RootLayout({
