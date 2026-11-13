@@ -135,7 +135,7 @@ pnpm dev:offline
 ```
 
 - Sobe apenas o web (`:3000`) e o backend Nest (`:3001`). O Express não sobe porque os dois usam a mesma porta — de quebra, o offline exercita o runtime do cutover da Fase 2.
-- Na tela de login, clique em **Enter offline workspace**. O primeiro acesso cria uma identidade local por navegador (dois navegadores = dois jogadores).
+- Na landing (ou na tela de login), clique em **Enter offline workspace**. O primeiro acesso cria uma identidade local por navegador (dois navegadores = dois jogadores).
 - Cada identidade ganha um **My Space** com o mapa inicial. Criar/editar/gerenciar realms, skins, chat, teleporte e links compartilhados funcionam normalmente.
 - Os dados ficam em `.offline/data.json` (ignorado pelo git). Apague a pasta para resetar o mundo local.
 - Áudio/vídeo (Agora) fica desligado no offline.

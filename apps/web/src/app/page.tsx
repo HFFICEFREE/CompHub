@@ -10,7 +10,9 @@ import {
   Sparkle,
   UsersThree,
   VideoCamera,
+  WifiSlash,
 } from '@phosphor-icons/react'
+import { isOfflineMode } from '@/utils/offline/config'
 
 const features = [
   {
@@ -42,6 +44,8 @@ const features = [
 const GITHUB_URL = 'https://github.com/HFFICEFREE/CompHub'
 
 export default function Index() {
+  const offline = isOfflineMode()
+
   return (
     <div className='gradient relative min-h-screen overflow-hidden'>
       <div aria-hidden className='pointer-events-none absolute inset-0 overflow-hidden'>
@@ -74,8 +78,12 @@ export default function Index() {
         <div className='mt-16 grid items-center gap-12 lg:mt-20 lg:grid-cols-[1.1fr_0.9fr]'>
           <div>
             <span className='inline-flex items-center gap-2 rounded-full border border-quaternary/30 bg-quaternary/10 px-3 py-1 text-xs font-medium text-quaternary'>
-              <Sparkle className='h-3.5 w-3.5' weight='fill' />
-              Realms · presence · video
+              {offline ? (
+                <WifiSlash className='h-3.5 w-3.5' weight='bold' />
+              ) : (
+                <Sparkle className='h-3.5 w-3.5' weight='fill' />
+              )}
+              {offline ? 'Offline workspace · local data' : 'Realms · presence · video'}
             </span>
 
             <h1 className='mt-6 text-4xl font-semibold leading-tight sm:text-5xl'>
@@ -90,10 +98,11 @@ export default function Index() {
 
             <div className='mt-8 flex flex-wrap items-center gap-5'>
               <Link
-                href='/app'
+                href={offline ? '/signin' : '/app'}
                 className='inline-flex items-center gap-2 rounded-lg bg-quaternary px-6 py-4 text-sm font-semibold text-button transition-colors duration-300 hover:bg-quaternaryhover'
               >
-                Get started <ArrowRight className='h-4 w-4' />
+                {offline ? 'Enter offline workspace' : 'Get started'}
+                <ArrowRight className='h-4 w-4' />
               </Link>
 
               <a
@@ -107,8 +116,9 @@ export default function Index() {
             </div>
 
             <p className='mt-4 text-xs text-white/40'>
-              Runs in the browser. Sign in with Google, or use the offline workspace for local
-              development.
+              {offline
+                ? 'Offline mode: no Supabase, no Google. Realms are stored locally in .offline/data.json.'
+                : 'Runs in the browser. Sign in with Google, or use the offline workspace for local development.'}
             </p>
           </div>
 
