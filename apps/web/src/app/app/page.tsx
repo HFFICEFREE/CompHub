@@ -21,7 +21,7 @@ export default async function App() {
         realms.push(...ownedRealms)
     }
     if (session) {
-        let { data: visitedRealms, error: visitedRealmsError } = await getVisitedRealms(session.access_token)
+        let { data: visitedRealms } = await getVisitedRealms(session.access_token)
         if (visitedRealms) {
             visitedRealms = visitedRealms.map((realm) => ({ ...realm, shared: true }))
             realms.push(...visitedRealms)

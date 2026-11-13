@@ -1,9 +1,6 @@
 // Removed TypeScript-specific syntax for JavaScript compatibility
 
 const nextConfig = {
-  experimental: {
-    // No unknown properties
-  },
   images: {
     remotePatterns: [
       {

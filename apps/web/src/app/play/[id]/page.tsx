@@ -31,7 +31,7 @@ export default async function Play({ params, searchParams }: { params: Promise<{
     const realm = data
     const map_data = realm.map_data
 
-    let skin = profile.skin
+    const skin = profile.skin
 
     if (shareId && realm.owner_id !== user.id) {
         updateVisitedRealms(session.access_token, shareId)

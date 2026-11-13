@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
   "type": "module",
   "dependencies": {
@@ -21,7 +21,7 @@
     "autoprefixer": "10.6.2",
     "geist": "^1.9.2",
     "gsap": "^3.15.1",
-    "next": "15.5.29",
+    "next": "16.4.6",
     "pixi.js": "^8.1.0",
     "postcss": "8.5.32",
     "react": "19.3.1",
@@ -40,8 +40,8 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "encoding": "^0.1.13",
-    "eslint": "8.57.1",
-    "eslint-config-next": "15.5.29",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.4.6",
     "eslint-config-prettier": "10.1.8",
     "prettier": "3.9.10"
   }
