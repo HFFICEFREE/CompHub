@@ -430,7 +430,7 @@ export class PlayApp extends App {
         const supabase = createClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) return
-        let channelName = ''
+        const channelName = ''
 
         signal.emit('newRoomChat', {
             name: this.realmData.rooms[this.currentRoomIndex].name,
